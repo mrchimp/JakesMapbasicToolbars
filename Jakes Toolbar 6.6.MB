@@ -1,0 +1,1191 @@
+'*********************************
+'* Jake's Amazing Toolbar        *
+'* 2009-2011 All Rights Reserved *
+'*********************************
+
+Include "mapbasic.def"
+
+Declare Sub Main
+
+' Main functions (called directly from menu)
+Declare Sub ShowUnmapped
+Declare Sub SiteAreaUpdate
+Declare Sub RotateWin
+Declare Sub MifDxfShpExporter
+Declare Sub Bufferiser
+Declare Sub OverlapDetector
+
+'Helper Functions
+Declare Sub TableSelectHandler
+Declare Sub SitePlanTableSelectHandler
+Declare Sub SiteLabelToggler
+Declare Sub CreateDir
+Declare Function SlashesToUnderscores(ByVal StrValue As String) As String                                                                'slashes in SiteRef are changed to underscores...otherwise errors happen
+Declare Function ReplaceCharAtPosition(ByVal StrValue As String, ByVal Position As Integer, ByVal ReplaceWith As String) As String       'this is required by SlashesToUnderscores
+Declare Function IsObjectRegion(ObjAlias As Object) As Logical
+Declare Function IsTableOpen(Byval TName as string) as logical
+
+' Get system time to the millisecond
+Declare Function GetTickCount Lib "kernel32.dll" () As Integer 
+
+
+'Blockstart ' MIX DXF SHP exporter stuff ---------------------------------------
+Type SECURITY_ATTRIBUTES
+  nLength as integer                          ' DWORD in Windows
+  lpSecurityDescriptor as integer             ' LPVOID in Windows
+  bInheritHandle as integer                   ' BOOL in Windows
+End type
+
+Declare function CreateDirectory32 lib "Kernel32.dll" alias "CreateDirectoryA"         ' Used by the MIF DXF SHP exporter
+  (byval sPath as string, tSecurity as SECURITY_ATTRIBUTES) as integer
+  
+' Pauses the program for a given amount of time.
+Declare Sub Sleep Lib "kernel32" Alias "Sleep" (ByVal dwMilliseconds As Integer)
+'Blockend ' MIX DXF SHP exporter stuff =========================================
+  
+'Blockstart ' BrowseForFolder Stuff --------------------------------------------
+' THE FOLLOWING ARE ALL NEEDED FOR THE BrowseForFolder FUNCTION TO WORK
+Define BIF_RETURNONLYFSDIRS &H1
+Define MAX_PATH 260
+Define CSIDL_DRIVES &H11
+Type BrowseInfo
+    hWndOwner      As Integer
+    pIDLRoot       As Integer
+    pszDisplayName As String
+    lpszTitle      As String
+    ulFlags        As Integer
+    lpfnCallback   As Integer
+    lParam         As Integer
+    iImage         As Integer
+End Type
+Dim hWndOwner As Integer
+Dim sPrompt As String
+Declare Sub CoTaskMemFree Lib "ole32.dll" (ByVal hMem As Integer)
+Declare Function lstrcat Lib "kernel32" Alias "lstrcatA" (ByVal lpString1 As String, ByVal lpString2 As String) As Integer
+Declare Function SHBrowseForFolder Lib "shell32" Alias "SHBrowseForFolderA"(lpbi As BrowseInfo) As Integer
+Declare Function SHGetPathFromIDList Lib "shell32" Alias "SHGetPathFromIDListA" (ByVal pidList As Integer, lpBuffer As String) As Integer
+Declare Function SHGetSpecialFolderLocation Lib "shell32.dll" (ByVal hwndOwner As Integer, ByVal nFolder As Integer, ppidl As Integer) As Integer
+Declare Function BrowseForFolder(hWndOwner As Integer, sPrompt As String) As String
+Declare Sub GetFolder ' workaround to get BrowseForFolder func to work properly
+Declare Sub ColumnList(strTableName as string, strColumnList() as string)
+'Blockend ' End BrowseForFolder Stuff ==========================================
+
+'Blockstart ' SitePlan Exporter Stuff ------------------------------------------
+
+Global StyleOverride as Logical
+Global CurrentRow As Integer       ' row being processed
+Global LabelSiteplans as Logical
+Dim SelectedTable As String        ' Table to be used (i.e. SiteForm)
+Dim MapWinID As Integer            ' Number of the main map window.
+Dim MapWindowName As String        ' Name of the main map window.
+Dim LayoutWindowNum As String      ' WindowID of the layout window that is being exported.
+Dim ExportFolder As String         ' Destination for exported site plans.
+Dim ObjColAlias As Alias           ' i.e. SiteForm.obj
+Dim SiteRefAlias As Alias          ' i.e. SiteForm.Site_ref
+Dim SiteLabelAlias As Alias        ' i.e. SiteForm.Site_name
+Dim SkippedSum As Integer          ' counts how many couldn't be exported (i.e. had no obj)
+Dim SiteRef As String              ' name of "Site_ref" column
+Dim SiteLabelCol	as String      ' column to use when label site plans
+Dim SiteLabel	as String          ' column to use when label site plans
+Dim NumOfRows As Integer           ' number of rows in selected table
+Dim TextObjRowId as Integer
+Dim sLayoutTable as String
+
+' Styles and settings for exported plans
+Dim ExportResolution As Integer ' default=150
+Dim PenStyle As Pen
+Dim BrushStyle As Brush
+Dim PointStyle As Symbol
+Dim ExportPaperSize As Integer
+Dim FileType As Integer                         ' Chosen file type as index of FileTypeArray
+Dim FileTypeStr As String                       ' File type as string - for use with Save Window command
+Dim FileTypeArray(13) as String
+
+' Main siteplan function. This calls SitePlanExport 
+' repeatedly and controls the progress bar.
+Declare Sub ProgressBarExport
+
+' Sub that actually does the exporting.
+Declare Sub SitePlanExport
+
+Declare Sub ShowExporterHelp
+Declare Function GetLayoutTableRowId (TextValue as String, slayoutTable as String) as Integer
+Declare Sub UpdateLayoutText(sNewText as String, slayoutTable as String, iRowId as Integer)
+Declare Function ChooseWindowNum As String
+Declare Sub GetWindowList (WindowList() as String)
+'Blockend ' End SitePlan Exporter Stuff ========================================
+
+
+
+
+Sub Main                                                            'Blockstart
+	OnError goto MainError
+
+    ' Populate filetypes array
+    FileTypeArray(1)  = "PNG"
+    FileTypeArray(2)  = "BMP"
+    FileTypeArray(3)  = "WMF"
+    FileTypeArray(4)  = "JPEG"
+    FileTypeArray(5)  = "JP2"
+    FileTypeArray(6)  = "TIFF"
+    FileTypeArray(7)  = "TIFFCMYK"
+    FileTypeArray(8)  = "TIFFG4"
+    FileTypeArray(9)  = "TIFFLZW"
+    FileTypeArray(10) = "GIF"
+    FileTypeArray(11) = "PSD"
+    FileTypeArray(12) = "EMF"
+    FileTypeArray(13) = "GEOTIFF"
+
+    'Make some default styles for SitePlan export
+    PenStyle   = MakePen(6,2,RED)
+    BrushStyle = MakeBrush(01,RED,RED)
+    PointStyle = MakeSymbol(34,RED,18)
+
+    Create Menu "Jake's Tools V6.6" As
+        "Show Unmapped Records" Calling ShowUnmapped,
+        "Show Overlaps"         Calling OverlapDetector,
+        "Update Areas..."       Calling SiteAreaUpdate,
+        "(-",
+        "Export MIF DXF SHP..." Calling MifDxfShpExporter,
+        "Export Site Plans..."  Calling ProgressBarExport
+        
+    Alter Menu Bar Add "Jake's Tools V6.6"
+	
+	Exit Sub
+	
+MainError:
+	Note "Error: "+ Error$()
+End Sub                                                             'Blockend
+
+Sub ShowUnmapped                                                    'Blockstart
+	OnError goto UnmappedError
+
+    Dim TableNum as Integer
+    Dim TableName as String
+
+    ' Get table list
+    Dim TableNums(1) As String
+    Dim i, j as integer
+    i = NumTables()
+    ReDim TableNums(i)
+    For j = 1 to i
+        TableNums(j) = Tableinfo(j,TAB_INFO_NAME)
+    Next
+
+    ' Choose table
+    Dialog
+        Title "Choose table"
+        Control PopupMenu
+            Title From Variable TableNums
+            Into TableNum
+        Control OKButton
+        Control Cancelbutton
+
+    If CommandInfo(CMD_INFO_DLG_OK) Then
+        TableName = TableInfo(TableNum, TAB_INFO_NAME)
+
+        ' Do the work
+        If IsTableOpen(TableName) Then
+            Select * from TableName Into AllUnmapped Where Not Obj
+            Browse * from AllUnmapped
+        Else
+            Note "Error: " + TableName + "isn't open. How did you do that?!"
+        End If
+    End If
+	
+	Exit Sub
+	
+UnmappedError:
+	Note "Error: " + Error$()
+End Sub                                                             'Blockend
+
+Sub SiteAreaUpdate                                                  'Blockstart
+    OnError goto AreaError
+    
+    Dim SiteAreaNum, TableNum   as Integer
+    Dim TableName, AreaUnits    as String
+    Dim SiteAreaCol             as Alias
+    Dim ColumnListVar(10)       as String
+    Dim AreaUnitsArray(16)      as String
+
+    AreaUnitsArray(1) = "hectare"
+    AreaUnitsArray(2) = "acre"
+    AreaUnitsArray(3) = "perch"
+    AreaUnitsArray(4) = "rood"
+    AreaUnitsArray(5) = "sq ch"
+    AreaUnitsArray(6) = "sq cm"
+    AreaUnitsArray(7) = "sq ft"
+    AreaUnitsArray(8) = "sq in"
+    AreaUnitsArray(9) = "sq km"
+    AreaUnitsArray(10) = "sq li"
+    AreaUnitsArray(11) = "sq m"
+    AreaUnitsArray(12) = "sq mi"
+    AreaUnitsArray(13) = "sq mm"
+    AreaUnitsArray(14) = "sq rd"
+    AreaUnitsArray(15) = "sq survey ft"
+    AreaUnitsArray(16) = "yd"
+
+    Dim TableNums(1) As String
+    Dim i as integer
+    Dim j as integer
+    i = NumTables()
+    ReDim TableNums(i)
+    For j = 1 to i
+        TableNums(j) = Tableinfo(j,TAB_INFO_NAME)
+    Next
+
+    Call ColumnList(TableNums(1),ColumnListVar)
+
+    Dialog
+        Title "Update Area Column"
+        Control StaticText
+            Title "This tool updates the area column of a table."
+        Control StaticText
+            Title "Table"
+            Position 10, 24
+        Control PopupMenu
+            Title From Variable TableNums
+            Position 40, 20
+            ID 51
+            Calling TableSelectHandler
+            Into TableNum
+        Control StaticText
+            Title "Column"
+            Position 10, 44
+        Control PopupMenu
+            Title From Variable ColumnListVar
+            Into SiteAreaNum
+            Position 40, 40
+            ID 52
+            Width 80
+        Control StaticText
+            Title "Units"
+            Position 10, 64
+        Control PopupMenu
+            Title From Variable AreaUnitsArray
+            Into AreaUnits
+            Position 40, 60
+        Control OKButton
+        Control Cancelbutton
+
+    If CommandInfo(CMD_INFO_DLG_OK) Then
+        TableName = TableInfo(TableNum, TAB_INFO_NAME)
+        If IsTableOpen(TableName) Then
+            SiteAreaCol = ColumnInfo(TableName, "COL"&SiteAreaNum, COL_INFO_NAME)
+            Select * From TableName Where Obj Into AreaTable Noselect
+            Update AreaTable
+                Set SiteAreaCol = Area(obj, AreaUnitsArray(AreaUnits))
+            Close Table AreaTable
+        Else
+            Note "The table " + TableName + " isn't open. What have you done?!"
+        End If
+    End If
+    
+    Exit Sub
+
+AreaError:
+    Note "Error: " + Error$()
+End Sub                                                             'Blockend
+
+Sub TableSelectHandler                                              'Blockstart
+    Dim ColumnListVar(10) as String
+    Dim strTable as string
+
+    strTable = TableInfo(readcontrolvalue(51), TAB_INFO_NAME)
+
+    Call ColumnList(strTable,ColumnListVar)
+
+    Alter Control 52 Title from Variable ColumnListVar
+End Sub                                                             'Blockend
+
+Sub SitePlanTableSelectHandler                                      'Blockstart
+    Dim ColumnListVar(10) as String
+    Dim strTable as string
+
+    strTable = TableInfo(readcontrolvalue(51), TAB_INFO_NAME)
+
+    Call ColumnList(strTable,ColumnListVar)
+
+    Alter Control 52 Title from Variable ColumnListVar
+    Alter Control 53 Title from Variable ColumnListVar
+End Sub                                                             'Blockend
+
+Sub SiteLabelToggler												'Blockstart
+	If readcontrolvalue(54) <> 0 Then
+		Alter Control 53 Enable
+	Else 
+		Alter Control 53 Disable
+	End If
+End Sub																'Blockend
+
+Sub ColumnList(strTableName as string, strColumnList() as string)   'Blockstart
+    OnError goto NoSelection
+
+    Dim intCounter as integer
+
+    redim strColumnList(numcols(strTableName))
+
+    For intCounter = 1 to numCols(strTableName)
+        strColumnList(intCounter) = ColumnInfo(strTableName,"col" & intCounter ,COL_INFO_NAME)
+    Next
+
+    Exit Sub
+
+NoSelection:
+    Print "There was an  error" & Error$()
+End Sub                                                             'Blockend
+
+Sub MifDxfShpExporter                                               'Blockstart
+    OnError goto whats_wrong
+
+    ' DXF MIF SHP EXPORTER VARS
+    Dim SQLStr As String
+    Dim SearchType As Integer                                                    ' type of search in Site_ref search - "=" or "like"
+    Dim TabFile As String                                                        ' TAB file to be exported by Dxf Mif Shp Exporter   e.g. "c:\temp\SiteForm.tab
+    Dim OutputFile As String                                                    ' File for output of            "
+    Dim TableName As String                                                        ' name of Tab file                                     e.g. "SiteForm"
+    Dim RunStr As String                                                        ' command string to be input into batch files
+    Dim ControlMaker As String                                                    ' url of BAT file for creating ControlFile
+    Dim ControlFile As String                                                    ' url of Control File for exporter
+    Dim SHPMaker As String                                                        ' url of BAT file for creating SHP
+    Dim dirStatus As Integer                                                      ' status of directory being created - non-zero if folder is created
+    Dim tSecurity as SECURITY_ATTRIBUTES                                        ' for creating a new directory
+
+    Dim TableNum as Integer
+    'Dim TableName as String
+
+    ' Get table list
+    Dim TableNums(1) As String
+    Dim i as integer
+    Dim j as integer
+    i = NumTables()
+    ReDim TableNums(i)
+    For j = 1 to i
+        TableNums(j) = Tableinfo(j,TAB_INFO_NAME)
+    Next
+
+    ExportFolder = ""
+
+    Dialog
+        Title "Choose table to export as MIF, DXF and SHP"
+        Control StaticText
+            Title "Note: Certain shape types (e.g. multipoints) will cause the export function to abort. I'm working on this..."
+            Position 10, 10
+        Control StaticText
+            Title "Also please note that this will overwrite any files that it needs to. Choose your folder wisely."
+            Position 10, 30
+        Control PopupMenu
+            Title From Variable TableNums
+            Into TableNum
+            Position 10, 50
+        Control Button
+            Title "Output folder"
+            Calling GetFolder
+            Position 120, 49
+        Control OKButton
+        Control Cancelbutton
+
+
+    If CommandInfo(CMD_INFO_DLG_OK) Then
+        If ExportFolder = "" Then
+            Note "Please choose an output folder. (The dialog will now close. Sorry about that.)"
+            Exit Sub
+        End If
+
+        TableName = TableInfo(TableNum, TAB_INFO_NAME)
+
+        tSecurity.nLength = 24
+        DirStatus = CreateDirectory32(ExportFolder + "\Converted", tSecurity)
+        DirStatus = CreateDirectory32(ExportFolder + "\Converted\MIF", tSecurity)
+        DirStatus = CreateDirectory32(ExportFolder + "\Converted\DXF", tSecurity)
+        DirStatus = CreateDirectory32(ExportFolder + "\Converted\SHP", tSecurity)
+        ExportFolder = ExportFolder + "\Converted\"
+
+        'OutputFile = ExportFolder + "MIF\" + TableName + ".mif"
+
+        Print "Exporting..."
+
+        Export TableName
+            Into ExportFolder + "MIF\" + TableName + ".mif"
+            Type "MIF"
+            Overwrite
+
+        Print "MIF exported."
+
+        'OutputFile = ExportFolder + "DXF\" + TableName + ".dxf"
+
+        Export TableName
+            Into ExportFolder + "DXF\" + TableName + ".dxf"
+            Type "DXF"
+            Overwrite
+
+        Print "DXF Exported"
+
+        ControlFile = ExportFolder + "ControlFile.fme"
+        ControlMaker = ExportFolder + "ControlMaker.bat"
+
+        If Not FileExists(ControlFile) Then                'If control file doesn't exist then make a new one
+            RunStr = "C:\Progra~1\MapInfo\Professional\UT\IMUT.exe CFGenerate MAPINFO SHAPE """ + TabFile + """ """ + ControlFile + """ LOG_STANDARDOUT ""YES"""
+            Open File ControlMaker
+                For Output
+                Access Write
+                As #1
+            Print #1, RunStr
+            Close File #1
+            Run Program ControlMaker
+            Print "Waiting for FME file to be made..."
+            While Not FileExists(ControlFile)            ' wait until fme file is made before carrying on...
+                Call Sleep(2000)                        'pause for 2secs, otherwise it'll spaz out trying to repeatedly check for the file...
+            Wend
+        End If
+
+        RunStr = "C:\Progra~1\MapInfo\Professional\UT\IMUT.exe """ + ControlFile + """ --HOMOGENOUS_GEOMETRY ""YES"" --_SHAPE_FILE_TYPE ""2d"" --SourceDataset """ + TabFile + """ --DestDataset """ + ExportFolder + """ --_EXTENSION ""TAB"" --_BASENAME Converted\SHP --_FULLBASENAME """"Converted\SHP"
+        SHPMaker = ExportFolder + "SHPMaker.bat"
+        Open File SHPMaker
+            For Output
+            Access Write
+            As #2
+        Print #2, RunStr
+        Close File #2
+        While Not FileExists(ShpMaker)                ' wait until fme file is made before carrying on...
+            Call Sleep(2000)                        'pause for 2secs, otherwise it'll spaz out trying to repeatedly check for the file...
+        Wend
+        Run Program SHPMaker
+        Print "SHP Exported."
+        Print "All done (hopefully) :D"+Chr$(10)+"Note: You can delete the .bat and .fme files from the 'Converted' folder."
+        Note "All done (hopefully) :D"+Chr$(10)+"Note: You can delete the .bat and .fme files from the 'Converted' folder."
+    End If
+
+    Exit Sub
+
+whats_wrong:
+    Note "MifDxfShp Exporter Error: " & Error$() & Chr$(10) & "Export process has been aborted."
+
+End Sub                                                             'Blockend
+
+Sub ProgressBarExport                                               'Blockstart
+    OnError goto site_plan_issues
+
+    Dim TimerStart          as Integer
+    Dim TimerEnd            as Integer
+    
+    Dim sMarker             as String
+    Dim TableNum            as Integer
+    Dim ColumnListVar(10)   as String
+    Dim SiteRefNum          as Integer
+    Dim SiteLabelNum        as Integer
+    Dim TableName           as String
+    
+    Dim WindowWidth         as Integer
+    Dim WindowHeight        as Integer
+    
+    Dim TableNums(1) As String
+    Dim i as integer
+    Dim j as integer
+    i = NumTables()
+    ReDim TableNums(i)
+    For j = 1 to i
+        TableNums(j) = Tableinfo(j,TAB_INFO_NAME)
+    Next
+
+    Dim WindowNums(1) as string
+    Dim k As Integer
+    Dim l As Integer
+    k = NumWindows()
+    ReDim WindowNums(k)
+    For l = 1 to k
+        If WindowInfo(l, WIN_INFO_TYPE) = WIN_MAPPER Then
+            WindowNums(l) = WindowInfo(l,WIN_INFO_NAME)
+        End If
+    Next
+
+    Call ColumnList(TableNums(1),ColumnListVar)
+    
+    Dialog
+        Title "Site Plan Exporter"
+
+        Control GroupBox
+            Title "What to export"
+            Width 120 Height 100
+            Position 5, 10
+        Control StaticText
+            Title "Choose map window:"
+            Position 10, 20
+            Width 110
+        Control Popupmenu
+            Title From Variable WindowNums
+            Into MapWindowName
+            Value MapWindowName
+            Width 110
+            Position 10,30
+        Control StaticText
+            Title "Choose SiteForm Layer:"
+            Position 10, 50
+            Width 110
+        Control PopupMenu
+            Title From Variable TableNums
+            Into TableNum
+            Value TableNum
+            Width 110
+            Position 10, 60
+            Id 51
+            Calling SitePlanTableSelectHandler
+        Control StaticText
+            Title "Site ref column"
+            Position 10, 80
+            Width 110
+        Control PopupMenu
+            Title From Variable ColumnListVar
+            Into SiteRefNum
+            Id 52
+            Position 10, 90
+            Width 110
+
+        Control GroupBox
+            Title "Format"
+            Width 120 Height 135
+            Position 130, 10
+        Control StaticText
+            Title "Destination Folder:"
+            Position 140, 20
+            Width 80
+        Control Button
+            Title "Browse"
+            Calling GetFolder
+            Position 140, 30
+        Control StaticText
+            Title "File Type:"
+            Position 140, 50
+            Width 80
+        Control PopupMenu
+            Title From Variable FileTypeArray
+            Value 1
+            Into FileType
+            Position 140, 60
+        Control StaticText
+            Title "Resolution:"
+            Position 140, 80
+            Width 80
+        Control EditText
+            Into ExportResolution
+            Width 25
+            Value 150
+            Position 140, 90
+        Control StaticText
+            Title "Paper Size"
+            Position 140, 110
+            Width 80
+        Control PopupMenu
+            Title "A4 Portrait;A4 Landscape;A3 Portrait;A3 Landscape"
+            Value 1
+            Into ExportPaperSize
+            Position 140, 120
+
+		Control GroupBox
+			Title "Label"
+			Width 120 Height 50
+			Position 5, 115
+		Control Checkbox
+			Title "Include label"
+			Into LabelSiteplans
+			Calling SiteLabelToggler
+			Id 54
+        Control PopupMenu
+            Title From Variable ColumnListVar
+            Into SiteLabelNum
+            Id 53
+            Width 110
+			Position 10, 140
+			
+        Control GroupBox
+            Title "Style"
+            Width 120 Height 50
+            Position 130, 150
+        Control CheckBox
+            Title "Override Style"
+            Into StyleOverride
+            Value True
+        Control PenPicker
+            Position 140, 175
+            Into PenStyle
+            Value PenStyle
+        Control BrushPicker
+            Position 170, 175
+            Into BrushStyle
+            Value BrushStyle
+        Control SymbolPicker
+            Position 200, 175
+            Into PointStyle
+            Value PointStyle
+			
+        Control Button
+            Title "Help!"
+            Calling ShowExporterHelp
+        Control OKButton
+        Control CancelButton
+
+    If CommandInfo(CMD_INFO_DLG_OK) Then
+        TableName = TableInfo(TableNum, TAB_INFO_NAME)
+        SiteRef =  ColumnInfo(TableName, "COL"&SiteRefNum, COL_INFO_NAME)
+        SiteLabelCol =  ColumnInfo(TableName, "COL"&SiteLabelNum, COL_INFO_NAME)
+        SelectedTable = TableInfo(TableNum, TAB_INFO_NAME)
+    
+        FileTypeStr = FileTypeArray(FileType)
+    
+		Print "Paper size: " & ExportPaperSize
+	
+        ' Create layout Window
+        Do Case ExportPaperSize
+            Case 1 ' A4 landscape
+                WindowWidth  = 210
+                WindowHeight = 297
+            Case 2 ' A4 landscape
+                WindowWidth  = 297
+                WindowHeight = 210
+            Case 3 ' A3 Portrait
+                WindowWidth  = 297
+                WindowHeight = 420
+            Case 4 ' A3 Landscape
+                WindowWidth  = 420
+                WindowHeight = 297
+            Case Else 
+                Note "What kind of paper was that?!"
+                Exit Sub
+        End Case
+        
+        print "Width: " & WindowWidth
+        print "Height: " & WindowHeight
+        
+        Layout
+            Width  WindowWidth  Units "mm"
+            Height WindowHeight Units "mm"
+            Max
+        Set CoordSys Layout Units "mm"
+
+        LayoutWindowNum = FrontWindow()
+
+        Create Frame
+            Into Window LayoutWindowNum
+            ( 0, 1 ) ( WindowWidth, WindowHeight )
+            Pen MakePen(0, 1, RGB(0,0,0))
+            Brush MakeBrush(01, RGB(0,0,0), RGB(0,0,0))
+            From Window WindowID(MapWindowName)
+            FillFrame On
+
+
+        ' == Add SiteRef label to layout window
+		Print "labelSiteplans = " & LabelSiteplans
+		Print "labelsiteplans=true: " & (LabelSiteplans <> 0)
+		If LabelSiteplans <> 0 Then
+			sMarker = "[REFNUM]"
+			Create Text
+				Into Window WindowID(LayoutWindowNum)
+				sMarker
+				(0.5,0.5) (4,1)
+				Font MakeFont("Arial", 1, 12, black, white)
+			sLayoutTable = WindowInfo(LayoutWindowNum, WIN_INFO_TABLE)
+			TextObjRowId = GetLayoutTableRowId(sMarker, sLayoutTable)
+		End If
+        ' =====================
+
+        ' Get map window ID
+        MapWinID = WindowID(MapWindowName)
+        
+        Select * From SelectedTable Where Obj Into ObsOnlyTable
+        
+        ' make a table to store each object - one at a time
+        Create Table SiteFormTemp(SiteRef char(16))
+        
+        ' Make table mappable - add obj column
+        Create Map
+            For SiteFormTemp
+            Using SelectedTable
+        Add Map
+            Window MapWinID
+            Layer SiteFormTemp
+
+        Fetch First From ObsOnlyTable
+
+        NumOfRows = TableInfo(ObsOnlyTable, TAB_INFO_NROWS)
+
+        SkippedSum = 0
+        CurrentRow = 1
+
+        'Print Chr$(12)
+        Print Chr$(13)&Chr$(13)&"--------------------------------------"&Chr$(13)
+        TimerStart = GetTickCount()
+        
+        If NumOfRows = 0 Then
+            Note "No objects found in table. Do you expect me to just make it up or something?"
+            Exit Sub
+        End If
+        
+        Print "Found " & NumOfRows & " records with objects attached. Exporting plans..."
+        
+        ProgressBar "Exporting Site Plans..."
+            Calling SitePlanExport
+            Range NumOfRows
+
+        Drop Table ObsOnlyTable
+        Drop Table SiteFormTemp
+        Close Window LayoutWindowNum
+
+        TimerEnd = GetTickCount()
+        print "(That took " & (TimerEnd - TimerStart) & "ms)"
+        Beep
+        If SkippedSum > 0 Then
+            Note "Export Completed. " & SkippedSum & " Skipped. See message window for more info :)"
+        Else
+            Note "All Done :D"
+        End If
+    End If
+
+    Exit Sub
+
+site_plan_issues:
+    note "There was a problem: " & Error$()
+
+End Sub                                                             'Blockend
+
+Sub SitePlanExport                                                  'Blockstart
+	OnError goto ExporterError
+	
+    Dim TempObj     As Object
+    Dim xCoord      As Float
+    Dim yCoord      As Float
+    Dim MapZoom     As Float
+    Dim SiteRefNum  As String
+    
+    ObjColAlias = ObsOnlyTable & ".Obj"
+    SiteRefAlias = ObsOnlyTable & "." & SiteRef
+    SiteLabelAlias = ObsOnlyTable & "." & SiteLabelCol
+    
+    TempObj = ObjColAlias
+
+    Insert Into SiteFormTemp (Obj) Values (TempObj)
+    
+    If StyleOverride <> 0 Then
+        Set Map Layer SiteFormTemp
+            Global Pen PenStyle
+            Global Line PenStyle
+            Global Brush BrushStyle
+            Global Symbol PointStyle
+            Display Global
+    Else 
+        Set Map Layer SiteFormTemp
+            Display Graphic
+    End If
+
+    ' Center on site
+    Set Map Zoom 100 Units "cm"
+    xCoord = CentroidX(ObjColAlias)
+    yCoord = CentroidY(ObjColAlias)
+    Set Map Center (xCoord, yCoord)
+
+    ' Center on / zoom to site
+    Set Map Redraw Off
+    Set Map Layer SelectedTable Display Off
+    Set Map Redraw On
+    Set Map Zoom entire Layer SiteFormTemp
+
+    ' Correct zoom level
+    MapZoom = MapperInfo(MapWinID, MAPPER_INFO_ZOOM)
+    MapZoom = MapZoom * 2
+    If MapZoom < 0.01 Then
+        MapZoom = 0.2
+    End If
+	
+    Set Map
+        Window MapWinID
+        Zoom MapZoom
+        
+	If LabelSiteplans <> 0 Then
+		SiteLabel = SiteLabelAlias
+		Call UpdateLayoutText(SiteLabel, slayoutTable, TextObjRowId)
+	End If
+	
+    Save Window WindowID(LayoutWindowNum)
+        As ExportFolder + "\" & SlashesToUnderscores(SiteRefAlias) & "." & FileTypeStr
+        Type FileTypeStr
+        Width  210 Units "mm"
+        Height 297 Units "mm"
+        Resolution ExportResolution
+
+    ' remove temp object
+    Delete From SiteFormTemp
+    
+    ' These 2 lines are needed to stop the map view from zooming further
+    ' and further out. Without them it zooms to show all previous sites, 
+    ' not just the current site...I'm not sure why - it shoudln't do as 
+    ' the previous sites are deleted by this point.
+    Commit Table SiteFormTemp
+    Pack Table SiteFormTemp Graphic Interactive
+    
+    Print SiteRefAlias & " exported. "
+
+    Fetch Next From ObsOnlyTable
+    CurrentRow = CurrentRow + 1
+    If CurrentRow > NumOfRows Then
+        ProgressBar = -1 'All done!
+    Else
+        ProgressBar = CurrentRow 'else do next row
+    End If
+	
+	Exit Sub
+	
+ExporterError:
+	Note "Error: " + Error$()
+	Print "Failed miserably."
+	ProgressBar = -1 ' End exporting
+End Sub                                                             'Blockend
+
+Sub ShowExporterHelp                                                'Blockstart
+    Note "Things to be aware of: " & Chr$(10) &  "1. Files will be overwritten automatically - choose your folder wisely." & Chr$(10) & "2. If there is an unexpected error the process will be canceled and any remaining sites will NOT be exported." & Chr$(10) & "3. You will have to map a network drive in order to save the files directly to the network."
+End Sub                                                         'Blockend
+
+Sub OverlapDetector                                                 'Blockstart
+    OnError goto NoOverlaps
+	
+    Dim RowCount                As Integer   'Total number of rows
+    Dim TempObj1                As Object    'Object variable 1
+    Dim TempObj2                As Object    'Object variable 2
+    Dim OverlapArea             As Float     'Area of the found overlap
+    Dim x                       as Integer   'used for counting...
+    Dim y                       as Integer   'used for counting...
+    Dim ObjectAlias             As Alias     'Alias for the Obj column
+    Dim SiteRef1                As String    'Site_ref var 1
+    Dim SiteRef2                As String    'Site_ref var 2
+    Dim OverlapThreshold        As Float     'Any overlaps of area smaller than this will be ignored
+    Dim AreaUnitsNum            As integer
+    Dim ResultsURL              as String
+    Dim ResultsTableName        as String
+    Dim TableNameIncrementor    as Integer
+    Dim ColumnListVar(10)       as String
+    Dim SiteRefColNum           as Integer
+    Dim SiteRefColName          as String
+    Dim TableNum                as Integer
+    Dim TableName               as String
+    Dim ResultsBasename         as String
+
+    Dim AreaUnitsArray(16) as String
+    AreaUnitsArray(1) = "hectare"
+    AreaUnitsArray(2) = "acre"
+    AreaUnitsArray(3) = "perch"
+    AreaUnitsArray(4) = "rood"
+    AreaUnitsArray(5) = "sq ch"
+    AreaUnitsArray(6) = "sq cm"
+    AreaUnitsArray(7) = "sq ft"
+    AreaUnitsArray(8) = "sq in"
+    AreaUnitsArray(9) = "sq km"
+    AreaUnitsArray(10) = "sq li"
+    AreaUnitsArray(11) = "sq m"
+    AreaUnitsArray(12) = "sq mi"
+    AreaUnitsArray(13) = "sq mm"
+    AreaUnitsArray(14) = "sq rd"
+    AreaUnitsArray(15) = "sq survey ft"
+    AreaUnitsArray(16) = "sq yd"
+
+    ' Get table list
+    Dim TableNums(1) As String
+    Dim i as integer
+    Dim j as integer
+    i = NumTables()
+    ReDim TableNums(i)
+    For j = 1 to i
+        TableNums(j) = Tableinfo(j,TAB_INFO_NAME)
+    Next
+
+    Call ColumnList(TableNums(1),ColumnListVar)
+
+    ' Choose table
+    Dialog
+        Title "Choose table"
+        
+        ' Table
+        Control StaticText
+            Title "Table to analyse"
+            Position 10, 10
+            Width 90
+        Control PopupMenu
+            Title From Variable TableNums
+            Into TableNum
+            Position 10, 20
+            Calling TableSelectHandler
+            Id 51
+            Width 90
+            
+        'Site ref col
+        Control StaticText
+            Title "Site name column"
+            Position 10, 45
+            Width 90
+        Control PopupMenu
+            Title From variable ColumnListVar
+            Into SiteRefColNum
+            Id 52
+            Width 90
+            Position 10, 55
+
+        ' Threshold
+        Control StaticText
+            Title "Overlaps smaller than this will be ignored:"
+            Position 10, 80
+            Width 70
+            Height 16
+        Control EditText
+            Into OverlapThreshold
+            Value 0
+            Position 10, 100
+            Width 30
+        Control PopupMenu
+            Title From Variable AreaUnitsArray
+            Into AreaUnitsNum
+            
+        Control OKButton
+            Position 10, 120
+        Control Cancelbutton
+            Position 50, 120
+
+    If CommandInfo(CMD_INFO_DLG_OK) Then
+        TableName = TableInfo(TableNum, TAB_INFO_NAME)
+        Set Area Units AreaUnitsArray(AreaUnitsNum)
+        Select * from TableName Into OverlapTable Where Obj NoSelect
+        RowCount = TableInfo(OverlapTable, TAB_INFO_NROWS)
+        ResultsURL = TempFileName$("")
+
+        'Set up column aliases
+        SiteRefColName = ColumnInfo(TableName, "COL"&SiteRefColNum, COL_INFO_NAME)
+        SiteRefAlias = OverlapTable & "." & SiteRefColName
+        ObjectAlias = OverlapTable & "." & Obj
+        
+        ' Check table name
+        ResultsBasename = "Overlaps_" + TableName
+        ResultsTableName = ResultsBasename
+        TableNameIncrementor = 1
+        Do While IsTableOpen(ResultsTableName) = True
+            TableNameIncrementor = TableNameIncrementor + 1
+            ResultsTableName = ResultsBasename & TableNameIncrementor
+        Loop
+
+        Create Table ResultsTableName
+            (   SiteOne Char(30),
+                SiteTwo Char(30),
+                overlapAmount Char(30)  )
+            File ResultsURL
+
+        For x = 1 To (RowCount - 1) Step 1
+            For y = (x+1) To RowCount Step 1
+                Fetch Rec x From OverlapTable
+                SiteRef1 = SiteRefAlias
+                TempObj1 = ObjectAlias
+
+                Fetch Rec y From OverlapTable
+                SiteRef2 = SiteRefAlias
+                TempObj2 = ObjectAlias
+
+                If IsObjectRegion(TempObj1) And IsObjectRegion(TempObj2) Then
+                    OverlapArea = AreaOverlap(TempObj1, TempObj2)
+                    If OverlapArea > OverlapThreshold Then
+                        Insert Into ResultsTableName
+                            (SiteOne, SiteTwo, overlapAmount)
+                        Values
+                            (SiteRef1, SiteRef2, OverlapArea + " Ha")
+                    End If
+                Else
+                    If TempObj1 Within TempObj2 Or TempObj2 Within TempObj1 Then
+                        Insert Into ResultsTableName
+                            (SiteOne, SiteTwo, overlapAmount)
+                        Values
+                            (SiteRef1, SiteRef2, "(Area unknown)")
+                    End If
+                End If
+            Next
+        Next
+
+        Browse * From ResultsTableName
+        Close Table OverlapTable
+    End If
+
+    Exit Sub
+
+NoOverlaps:
+    Close Table OverlapTable
+    Note "Error: " + Error$()
+End Sub                                                             'Blockend
+
+Function GetLayoutTableRowId(sTextValue as String, slayoutTable as String) as Integer   'Blockstart
+	OnError goto rowiderror
+	
+    Dim oText  as Object
+    Dim aObj   as Alias
+    Dim aRowId as Alias
+
+    aRowId = sLayoutTable + ".RowID"
+    aObj = sLayoutTable + ".OBJ"
+
+    ' Search through the layout window's table to find the text object with
+    ' the given text (sTextValue)
+    Fetch First From sLayoutTable
+    Do Until EOT(sLayoutTable)
+        oText = aObj
+        If ObjectInfo(oText, OBJ_INFO_TYPE) = OBJ_TYPE_TEXT Then
+            If ObjectInfo(oText, OBJ_INFO_TEXTSTRING) = sTextValue Then
+                ' We've found the Id so exit the function
+                GetLayoutTableRowId = aRowId
+                Exit Function
+            End If
+        End If
+        Fetch Next From sLayoutTable
+    Loop
+	
+	Exit Sub
+	
+rowiderror:
+	Note "Error: " + Error$()
+End Function                                                        'Blockend
+
+Sub UpdateLayoutText(sNewText as String, sLayoutTable as String, iRowId as Integer) 'Blockstart
+	OnError goto ULTError
+
+    Dim oText as Object
+    Dim aObj  as Alias
+
+    aObj = sLayoutTable + ".OBJ"
+
+    Fetch Rec iRowId From sLayoutTable
+
+    oText = aObj
+
+	If sNewText = "" Then
+		sNewText = " "
+	End If
+	
+    Alter Object oText Info OBJ_INFO_TEXTSTRING, sNewText
+    Update sLayoutTable
+        Set OBJ = oText
+        Where ROWID = iRowId
+		
+	Exit Sub
+	
+ULTError:
+	Note "Error: " + Error$()
+End Sub                                                              'Blockend
+
+
+
+' HELPER FUNCTIONS ------------------------------------------------------------
+
+Function IsTableOpen(Byval TName as string) as logical              'Blockstart
+    Dim l as Logical
+    Dim TabCount, LoopCount as Integer
+
+    TabCount = Numtables()                                          ' Get number of open tables
+    IsTableOpen = False                                             ' Start as false...because we haven't found it yet...
+    For LoopCount = 1 to TabCount                                   ' for each open table...
+        If TName = TableInfo(LoopCount, TAB_INFO_NAME) then         ' if table name is equal to the name we're looking for...
+            IsTableOpen = TRUE                                      ' ...then we've found something! I.E. the table is open.
+            Exit function                                           ' ...so there's no need to keep looking - exit the function.
+        End If
+    Next
+End Function                                                        'Blockend
+
+Function BrowseForFolder(hWndOwner As Integer, sPrompt As String) As String 'Blockstart
+    Dim nNull As Integer
+    Dim lpIDList As Integer
+    Dim nResult As Integer
+    Dim sPath As String
+    Dim retval As Integer
+    Dim bi As BrowseInfo
+    bi.hWndOwner = hWndOwner
+    retval = SHGetSpecialFolderLocation(0, CSIDL_DRIVES, bi.pidlRoot)
+    bi.pszDisplayName = Space$(MAX_PATH)
+    bi.lpszTitle = lstrcat(sPrompt, "")
+    bi.ulFlags = 0 'BIF_RETURNONLYFSDIRS
+     lpIDList = SHBrowseForFolder(bi)
+    If lpIDList <> 0 Then
+       sPath = Space$(260)
+       nResult = SHGetPathFromIDList(lpIDList, sPath)
+       If nResult <> 0 Then
+       sPath = Rtrim$(sPath)
+       'Note "Folder Name is: " & bi.pszDisplayName & Chr$(13) & "Your variable nResult value is: " & nResult & Chr$(13) & "Your folder path is: " & sPath
+       End If
+        Call CoTaskMemFree(lpIDList)
+    End If
+    BrowseForFolder = sPath
+    Call CoTaskMemFree(bi.pIDLRoot)
+End Function                                                        'Blockend
+
+Sub GetFolder                                                       'Blockstart
+    ExportFolder = BrowseForFolder(hWndOwner, sPrompt)            'Browse for folder and pass into ExportFolder variable
+End Sub                                                             'Blockend
+
+Function ChooseWindowNum as String                                  'Blockstart
+	OnError goto WinNumError
+	
+    Dim WindowNum      as Integer
+    Dim WindowArray(1) as String
+
+    Call GetWindowList(WindowArray)
+
+    Dialog
+        Title "Choose a window"
+        Control PopupMenu
+            Title From Variable WindowArray
+            Into WindowNum
+        Control OKButton
+        Control Cancelbutton
+
+    If CommandInfo(CMD_INFO_DLG_OK) Then
+        ChooseWindowNum = WindowNum
+    End If
+	
+	Exit Sub
+	
+WinNumError:
+	Note "Error: " + Error$()
+End Function                                                        'Blockend
+
+Sub GetWindowList (WindowList() as String)                          'Blockstart
+    Dim i as integer
+    Dim j as integer
+    i = NumWindows()
+    ReDim WindowList(i)
+    For j = 1 to i
+        WindowList(j) = WindowInfo(j, WIN_INFO_NAME)
+    Next
+End Sub                                                             'Blockend
+
+Function IsObjectRegion(ObjAlias As Object) As Logical              'Blockstart
+    Dim ObjectType As SmallInt
+    ObjectType = ObjectInfo(ObjAlias, OBJ_INFO_TYPE)
+    Do Case ObjectType
+        Case OBJ_TYPE_REGION
+            IsObjectRegion = True
+        Case OBJ_TYPE_RECT
+            IsObjectRegion = True
+        Case OBJ_TYPE_ROUNDRECT
+            IsObjectRegion = True
+        Case OBJ_TYPE_ELLIPSE
+            IsObjectRegion = True
+        Case Else
+            IsObjectRegion = False
+    End Case
+End Function                                                        'Blockend
+
+Function SlashesToUnderscores(ByVal StrValue As String) As String   'Blockstart
+    Dim Ptr as Integer
+    Ptr = InStr(1, StrValue, "/")
+    While (Ptr > 0)
+        StrValue = ReplaceCharAtPosition(StrValue, Ptr, "_")
+        Ptr = InStr(1, StrValue, "/")
+    Wend
+    SlashesToUnderscores = StrValue
+End Function                                                        'Blockend
+
+Function ReplaceCharAtPosition(ByVal StrValue As String, ByVal Position As Integer, ByVal ReplaceWith As String) As String 'blockstart
+    Dim StrBegin As String
+    Dim StrEnd As String
+    StrBegin = Left$(StrValue, Position - 1)
+    StrEnd = Right$(StrValue, Len(StrValue) - Position)
+    ReplaceCharAtPosition = StrBegin & ReplaceWith & StrEnd
+End Function                                                        'Blockend
