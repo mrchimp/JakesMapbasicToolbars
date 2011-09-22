@@ -1,0 +1,250 @@
+'************************************************************
+'*															*
+'*		Jake's Amazing Layout Window Tool					*
+'*		2009 All Rights Reversed							*
+'*															*
+'*		This application contains various tools for			*
+'*		quickly opening and altering layout windows			*
+'*															*
+'************************************************************
+
+Include "icons.def"
+Include "mapbasic.def"
+
+Declare Sub main
+Declare Sub OpenLayoutWin
+Declare Sub AddFrame
+Declare Sub NewA4LayoutP
+Declare Sub NewA3LayoutP
+Declare Sub NewA4LayoutL
+Declare Sub NewA3LayoutL
+Declare Sub RotateWin
+Declare Sub DuplicateWin
+Declare Sub RenameWindow
+Declare Sub CloseWindowTool
+Declare Sub ShowToolbar
+
+Dim LayoutWin As String
+Dim MapWin As Integer
+Dim CurrentWin As String
+
+Sub Main                                                            'Blockstart
+    Alter Menu ID 6 Add
+        "(-",
+        "Create A4 Landscape Layout from Mapper" 
+            HelpMsg "Creates a new A4 Layout window using the currently selected window."
+            Calling NewA4LayoutL,
+        "Create A4 Portait Layout from Mapper"
+            HelpMsg "Creates a new A4 Layout window using the currently selected window."
+            Calling NewA4LayoutP,
+        "Create A3 Landscape Layout from Mapper"
+            HelpMsg "Creates a new A3 Layout window using the currently selected window."
+            Calling NewA3LayoutL,
+        "Create A3 Portrait Layout from Mapper"
+            HelpMsg "Creates a new A3 Layout window using the currently selected window."
+            Calling NewA3LayoutP,
+        "(-",
+        "Rotate Window (beta)"
+            HelpMsg "Makes a portrait layout window landscape and vice versa. Doesn't affect window content or non-layout windows."
+            Calling RotateWin,
+        "Rename Window" 
+            HelpMsg "Changes the title of the current window."
+            Calling RenameWindow,
+        "Duplicate Window" 
+            HelpMsg "Duplicates the currently selected window."
+            Calling DuplicateWin,
+        "(-",
+        "Show WindowTool Toolbar"
+            HelpMsg "Displays the above tools as a toolbar."
+            Calling ShowToolbar,
+        "Close WindowTool" 
+            HelpMsg "Closes WindowTool and removes all of its menus from mapinfo. Including this one!"
+            Calling CloseWindowTool
+End Sub                                                             'Blockend
+
+Sub CloseWindowTool
+    End Program
+End Sub
+
+Sub ShowToolbar                                                     'Blockstart
+     Create ButtonPad "Layout Window Tool" As
+		PushButton
+		Icon MI_ICON_NUMBERS_4 'Number 3
+		Calling NewA3LayoutP
+		HelpMsg "Create new Portait A3 Layout Window\nCreate new Portait A3 Layout Window"
+
+		PushButton
+		Icon MI_ICON_NUMBERS_5 'Number 4
+		Calling NewA4LayoutP
+		HelpMsg "Create new Portait A4 Layout Window\nCreate new Portait A4 Layout Window"
+		
+		Separator
+		
+		PushButton
+		Icon MI_ICON_NUMBERS_4 'Number 3
+		Calling NewA3LayoutL
+		HelpMsg "Create new Landscape A3 Layout Window\nCreate new Landscape A3 Layout Window"
+
+		PushButton
+		Icon MI_ICON_NUMBERS_5 'Number 4
+		Calling NewA4LayoutL
+		HelpMsg "Create new Lanscape A4 Layout Window\nCreate new Landscape A4 Layout Window"
+		
+		Separator
+		
+		PushButton
+		Icon MI_ICON_UNDO 'Letter R
+		Calling RotateWin
+		HelpMsg "Rotate window by 90 degrees\nRotate window by 90 degrees"
+
+		PushButton
+		Icon MI_ICON_MB_6 'pencil and paper
+		Calling RenameWindow
+		HelpMsg "Rename the current window.\nRename the current window."
+        
+		PushButton
+		Icon MI_ICON_COPY 'Letter D
+		Calling DuplicateWin
+		HelpMsg "Duplicate the current window\nDuplicate the current window"
+		
+		Alter ButtonPad "Layout Window Tool" Fixed
+End Sub                                                             'Blockend
+
+Sub NewA4LayoutP                                                    'Blockstart
+	MapWin = FrontWindow()
+	Layout
+		Width 125 Units "mm"
+		Height 168 Units "mm"
+	Set CoordSys Layout Units "mm"
+	Create Frame
+		Into Window FrontWindow()
+		( 5, 5 ) ( 205, 292 )
+		Pen MakePen(0, 1, RGB(0,0,0))
+		From Window MapWin
+		FillFrame On
+	Set Layout
+		Window FrontWindow()
+		Zoom 50
+End Sub                                                             'Blockend
+
+Sub NewA3LayoutP                                                    'Blockstart
+	MapWin = FrontWindow()
+	Layout
+		Width 105 Units "mm"
+		Height 148 Units "mm"
+	Set CoordSys Layout Units "mm"
+
+	LayoutWin = FrontWindow()
+	Create Frame
+		Into Window LayoutWin
+		( 5, 5 ) ( 292, 415 )
+		Pen MakePen(0, 1, RGB(0,0,0))
+		From Window MapWin
+		FillFrame On
+
+	Set Window LayoutWin
+		Width 105 Units "mm"
+		Height 148 Units "mm"
+		Printer Papersize 8
+		
+	Set Layout
+		Window LayoutWin
+		zoom 25
+End Sub                                                             'Blockend
+
+Sub NewA4LayoutL                                                    'Blockstart
+	MapWin = FrontWindow()
+    
+	Layout
+		Width 168 Units "mm"
+		Height 125 Units "mm"
+        
+	Set CoordSys Layout Units "mm"
+    
+	Create Frame
+		Into Window FrontWindow()
+		( 5, 5 ) ( 292, 205 )
+		Pen MakePen(0, 1, RGB(0,0,0))
+		From Window MapWin
+		FillFrame On
+        
+	Set Layout
+		Window FrontWindow()
+		Zoom 50
+        
+	Set Window FrontWindow()
+		Printer Orientation Landscape
+End Sub                                                             'Blockend
+
+Sub NewA3LayoutL                                                    'BLockstart
+	MapWin = FrontWindow()
+	Layout
+		Width 148 Units "mm"
+		Height 105 Units "mm"
+	Set CoordSys Layout Units "mm"
+
+	LayoutWin = FrontWindow()
+	Create Frame
+		Into Window LayoutWin
+		( 5, 5 ) ( 415, 292 )
+		Pen MakePen(0, 1, RGB(0,0,0))
+		From Window MapWin
+		FillFrame On
+
+	Set Window LayoutWin
+		Width 148 Units "mm"
+		Height 105 Units "mm"
+		Printer Papersize 8
+
+	Set Layout
+		Window LayoutWin
+		zoom 25
+	
+	Set Window FrontWindow()
+		Printer Orientation Landscape
+End Sub                                                             'Blockend
+
+Sub RotateWin                                                       'Blockstart
+	CurrentWin = FrontWindow()
+	If WindowInfo(CurrentWin, WIN_INFO_TYPE) <> 3 Then
+		Beep
+		Note "Silly rabbit, Rotate Window function's for layout windows!"
+	Else
+		If WindowInfo(CurrentWin, WIN_INFO_PRINTER_ORIENT) = WIN_PRINTER_PORTRAIT Then
+			Set Window CurrentWin
+				Printer
+				Orientation Landscape
+		Else
+			Set Window CurrentWin
+				Printer
+				Orientation Portrait
+		End If
+	End If
+End Sub                                                             'Blockend
+
+Sub DuplicateWin                                                    'Blockstart
+	Dim DupStr As String
+	DupStr = WindowInfo(FrontWindow(), WIN_INFO_CLONEWINDOW)
+	Run Command DupStr
+End Sub                                                             'Blockend
+
+Sub RenameWindow                                                    'Blockstart
+	Dim WinName As String
+    
+    CurrentWin = FrontWindow()
+    WinName = WindowInfo(CurrentWin, WIN_INFO_NAME)
+    
+    Dialog
+        Title "New window name"
+        Control EditText
+            Value WinName
+            Into WinName
+            Width 200
+        Control CancelButton
+        Control OKButton
+    
+    If CommandInfo(CMD_INFO_DLG_OK) Then
+        Set Window CurrentWin
+            Title WinName
+    End If
+End Sub                                                             'Blockend
