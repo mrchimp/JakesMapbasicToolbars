@@ -1,0 +1,134 @@
+'*********************************
+'* Jake's Amazing Circle Tool    *
+'* 2009-2011 All Rights Reserved *
+'*********************************
+
+Include "mapbasic.def"
+Include "icons.def"
+
+Declare Sub Main
+Declare Sub CircleTool
+Declare Sub UpdateValues
+Declare Sub Help
+Declare Sub GetEditableTable(TableName as String)
+
+Global InputTypes(3) as String
+Global UnitTypes(3) as String
+
+Define pi 3.14159265
+
+Sub Main
+  InputTypes(1) = "Area"
+  InputTypes(2) = "Circumference"
+  InputTypes(3) = "Radius"
+
+  UnitTypes(1) = "m / sq m"
+  UnitTypes(2) = "cm / sq cm"
+  UnitTypes(3) = "miles / sq miles"
+
+  Alter ButtonPad "Drawing"
+    Add 
+    Separator
+    ToolButton
+    Icon MI_ICON_ARROW_19
+    HelpMsg "Click on map to draw circle"
+    Cursor MI_CURSOR_CROSSHAIR
+    DrawMode DM_CUSTOM_POINT
+    Calling CircleTool
+    Show
+End Sub
+
+Sub GetEditableTable(TableName as String)
+    Dim i as integer
+    Dim j as integer
+    Dim TableList(1) as String
+    i = NumTables()
+    ReDim TableList(i)
+    For j = 1 to i
+      If TableInfo(j, LAYER_INFO_EDITABLE) Then
+        TableName = TableInfo(j, TAB_INFO_NAME)
+        Exit Sub
+      End If
+    Next
+End Sub
+
+Sub CircleTool
+  OnError Goto YouFail
+
+  Dim x          as Float
+  Dim y          as Float
+  Dim currentTab as String
+  Dim InputVal, a, r, c, d as float
+  Dim InputType  as Integer
+
+  x = CommandInfo(CMD_INFO_X)
+  y = CommandInfo(CMD_INFO_Y)
+
+  Dialog
+    Title "Circle Tool"
+    
+    Control PopupMenu
+      Title From Variable InputTypes
+      Into InputType
+    Control StaticText
+      Title "="
+    
+    Control EditText
+      Into InputVal
+    
+    Control Button
+      Calling "Help"
+      Title "Help"
+    Control OkButton
+      Title "Create Circle"
+    Control CancelButton
+      Title "Close"
+
+
+  If CommandInfo(CMD_INFO_DLG_OK) Then
+    'InputVal = Val(InputType)
+  
+    If InputVal <= 0 Then
+      Note "Bigger number please."
+      Exit Sub
+    End If
+  
+    If InputType = 1 Then 'input = area
+      a = InputVal
+      r = Sqr(a / pi)
+      c = r * 2 * pi
+    elseif InputType = 2 Then 'input = circumference
+      c = InputVal
+      r = c / (2 * pi)
+      a = pi * r * r
+    elseif InputType = 3 Then ' input = radius
+      r = InputVal
+      c = 2 * pi * r
+      a = pi * r * r
+    End If
+  
+    d = r * 2
+
+    'call getEditableTable(currentTab)
+    currentTab = windowInfo(FrontWindow(), WIN_INFO_TABLE)
+    print "x: "&x
+    print "y: "&y
+    print "r: "&r
+    print "c: "&c
+    print "a: "&a
+    
+    INSERT INTO currentTab (obj) VALUES (CreateCircle(x, y, r))
+    ' Note "x: "+Round(CommandInfo(CMD_INFO_X), 0.1)+Chr$(10) +
+    '      "y: "+Round(CommandInfo(CMD_INFO_Y), 0.1)
+  End If
+     
+  Exit Sub
+	
+YouFail:
+  Note "Error: "+ Error$()
+End Sub
+
+Sub Help
+  Note "Calculations are unitless. "&Chr$(13)&
+       "For areas use e.g. sq meters or sq miles NOT Ha"
+End Sub
