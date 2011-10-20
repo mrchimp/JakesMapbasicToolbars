@@ -31,11 +31,16 @@ Sub Main                                                            'Blockstart
 End Sub                                                             'Blockend
 
 Sub About                                                           'Blockstart
-    Note "This program is made by and copyright Jacob Gully 2011." & Chr$(10) & Chr$(10) & 
-         "For further information please visit http://deviouschimp.co.uk/page/mapinfoviewporttool"
+    Note "This program is made by and copyright Jacob Gully 2011." & 
+          Chr$(10) & Chr$(10) & 
+         "For further information please visit " & 
+         "http://deviouschimp.co.uk/page/mapinfoviewporttool"
 End Sub                                                             'Blockend
 
+
+
 Function createTable As Logical                                     'Blockstart
+    OnError Goto CreateTableFail
     Dim newexist As integer
     Dim FullName As String
     
@@ -99,7 +104,12 @@ Function createTable As Logical                                     'Blockstart
     Else
         createTable = False
     End If
+
+CreateTableFail:
+    Exit Function
 End Function                                                        'Blockend
+
+
 
 Sub ShowTable                                                       'Blockstart
     Dim tableexists as logical
@@ -116,7 +126,11 @@ Sub ShowTable                                                       'Blockstart
     Browse * From ViewTable
 End Sub                                                             'Blockend
 
+
+
 Sub addView                                                         'Blockstart
+    OnError Goto FailedToAdd
+
     mapwindow = FrontWindow()
     
     If WindowInfo(mapwindow, WIN_INFO_TYPE) = 1 Then
@@ -207,9 +221,16 @@ Sub addView                                                         'Blockstart
     Else
         Note "Please select a map window first."
     End If
+
+FailedToAdd:
+    Exit Sub
 End Sub                                                             'Blockend
 
+
+
 Sub showView                                                        'Blockstart
+    OnError Goto FailPlace
+
     Dim iLoop, iRows, iOut as Integer
     Dim sName(0) as String
     Dim tableexists as integer
@@ -263,9 +284,15 @@ Sub showView                                                        'Blockstart
         Set Map
             Window mapwindow
             Center ( ViewTable.x_coord, ViewTable.y_coord )
-            Scale 1 Units ViewTable.paper_units For ViewTable.map_scale Units ViewTable.dist_units
+            Scale 1 Units ViewTable.paper_units 
+            For ViewTable.map_scale Units ViewTable.dist_units
     End If
+
+FailPlace:
+    Exit Sub
 End Sub                                                             'Blockend
+
+
 
 Function IsTableOpen(Byval TName as string) as logical              'Blockstart
     ' By Yuriy - See http://chimpy.wordpress.com/2009/10/28/mapinfo-viewport-tool/
