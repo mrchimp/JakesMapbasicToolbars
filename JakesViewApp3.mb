@@ -31,10 +31,11 @@ Sub Main                                                            'Blockstart
 End Sub                                                             'Blockend
 
 Sub About                                                           'Blockstart
-  Note "This program is made by and copyright Jacob Gully 2011." & 
+  Note "This program was made by Jacob Gully 2011." & 
       Chr$(10) & Chr$(10) & 
        "For further information please visit " & 
-       "http://deviouschimp.co.uk/page/mapinfoviewporttool"
+       "deviouschimp.co.uk" & Chr$(10) &
+       "or github.com/mrchimp/JakesMapbasicToolbars"
 End Sub                                                             'Blockend
 
 
