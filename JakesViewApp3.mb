@@ -20,207 +20,210 @@ Declare Function IsTableOpen(Byval TName as string) as logical
 
 
 Sub Main                                                            'Blockstart
-    Create Menu "&Views" As
-        "&Save view" Calling addView,
-        "&Go to view" Calling showView,
-        "(-",
-        "Show &Table" Calling ShowTable,
-        "(-",
-        "&About Views..." Calling about
-    Alter Menu Bar Add "Views"
+  Create Menu "&Views" As
+    "&Save view" Calling addView,
+    "&Go to view" Calling showView,
+    "(-",
+    "Show &Table" Calling ShowTable,
+    "(-",
+    "&About Views..." Calling about
+  Alter Menu Bar Add "Views"
 End Sub                                                             'Blockend
 
 Sub About                                                           'Blockstart
-    Note "This program is made by and copyright Jacob Gully 2011." & 
-          Chr$(10) & Chr$(10) & 
-         "For further information please visit " & 
-         "http://deviouschimp.co.uk/page/mapinfoviewporttool"
+  Note "This program is made by and copyright Jacob Gully 2011." & 
+      Chr$(10) & Chr$(10) & 
+       "For further information please visit " & 
+       "http://deviouschimp.co.uk/page/mapinfoviewporttool"
 End Sub                                                             'Blockend
 
 
 
 Function createTable As Logical                                     'Blockstart
-    OnError Goto CreateTableFail
-    Dim newexist As integer
-    Dim FullName As String
+  OnError Goto CreateTableFail
+
+  Dim newexist As integer
+  Dim FullName As String
     
-    Dialog
-        Title "No ViewTable"
-        Control StaticText
-            Title "ViewTable.tab is not open."
-            Width 200
-        Control StaticText
-            Title "Open an existing ViewTable or create a new one?"
-            Position 5, 15
-            Width 200
-        Control RadioGroup
-            Position 15, 30
-            Title "Create New Table;Load Existing Table"
-            Into newexist
-            Width 100
-        Control OKButton
-        Control CancelButton
+  Dialog
+    Title "No ViewTable"
+    Control StaticText
+      Title "ViewTable.tab is not open."
+      Width 200
+    Control StaticText
+      Title "Open an existing ViewTable or create a new one?"
+      Position 5, 15
+      Width 200
+    Control RadioGroup
+      Position 15, 30
+      Title "Create New Table;Load Existing Table"
+      Into newexist
+      Width 100
+    Control OKButton
+    Control CancelButton
         
-    If CommandInfo(CMD_INFO_DLG_OK) Then
-        If newexist = 1 Then '...we're making a new table
-            TableFolder = ""
-            TableFolder = PathToDirectory$(FileSaveAsDlg("", "ViewTable.tab", "TAB", "Choose where to save ViewTable.tab"))
-            FullName = TableFolder + "ViewTable.tab"
-            
-            If TableFolder = "" Then
-                createTable = False
-                Exit Function
-            End If
-            
-            Create Table ViewTable
-                (   name        Char(254),
-                    x_coord     Float,
-                    y_coord     Float,
-                    dist_units  Char(5),
-                    map_scale   Float,
-                    paper_units Char(5),
-                    win_width   Float,
-                    win_height  Float )
-                File FullName
-                Type NATIVE
-            
-            Commit Table ViewTable
-                Interactive
-            
-            createTable = True
-        Else '...we're using an existing table
-            Dim filename As String
-            
-            filename = FileOpenDlg("", "ViewTable.tab", "TAB", "Please locate ViewTable.tab")
-            
-            If filename = "" Then
-                createTable = False
-                Exit function
-            End If
-            
-            Open Table filename As ViewTable Interactive
-            createTable = True
-        End If
-    Else
+  If CommandInfo(CMD_INFO_DLG_OK) Then
+    If newexist = 1 Then '...we're making a new table
+      TableFolder = ""
+      TableFolder = PathToDirectory$(FileSaveAsDlg("", "ViewTable.tab", "TAB", "Choose where to save ViewTable.tab"))
+      FullName = TableFolder + "ViewTable.tab"
+      
+      If TableFolder = "" Then
         createTable = False
+        Exit Function
+      End If
+      
+      Create Table ViewTable
+        (   name        Char(254),
+            x_coord     Float,
+            y_coord     Float,
+            dist_units  Char(5),
+            map_scale   Float,
+            paper_units Char(5),
+            win_width   Float,
+            win_height  Float )
+        File FullName
+        Type NATIVE
+    
+      Commit Table ViewTable
+        Interactive
+      
+      createTable = True
+    Else '...we're using an existing table
+      Dim filename As String
+      
+      filename = FileOpenDlg("", "ViewTable.tab", "TAB", "Please locate ViewTable.tab")
+      
+      If filename = "" Then
+        createTable = False
+        Exit function
+      End If
+      
+      Open Table filename As ViewTable Interactive
+      createTable = True
     End If
+  Else
+      createTable = False
+  End If
 
 CreateTableFail:
-    Exit Function
+  Exit Function
 End Function                                                        'Blockend
 
 
 
 Sub ShowTable                                                       'Blockstart
-    Dim tableexists as logical
-    
-    If IsTableOpen("ViewTable") = False Then
-        tableexists = createTable()
-        If tableexists = False Then
-            Exit Sub
-        End If
-    Else
-        tableexists = True
+  Dim tableexists as logical
+
+  If IsTableOpen("ViewTable") = false Then
+    tableexists = createTable()
+    If tableexists = false Then
+      Exit Sub
     End If
-    
-    Browse * From ViewTable
+  Else
+    tableexists = true
+  End If
+  
+  Browse * From ViewTable
 End Sub                                                             'Blockend
 
 
 
 Sub addView                                                         'Blockstart
-    OnError Goto FailedToAdd
+  OnError Goto FailedToAdd
 
-    mapwindow = FrontWindow()
-    
-    If WindowInfo(mapwindow, WIN_INFO_TYPE) = 1 Then
-        Dim neworold        as Integer
-        Dim windowlist      as String
-        Dim name_var        As String
-        Dim TableExists     As Integer
+  mapwindow = FrontWindow()
+  
+  If WindowInfo(mapwindow, WIN_INFO_TYPE) <> 1 Then
+    Note "Please select a map window first."
+    Exit Sub
+  End If
 
-        If IsTableOpen("ViewTable") = False Then
-            tableexists = createTable()
-            If tableexists = False Then
-                Exit Sub
-            End If
-        Else
-            tableexists = True
-        End If
-        
-        'Save table first otherwise the loop below will make it crash
-        Commit Table ViewTable Interactive
-        Pack Table ViewTable Data Interactive
-        Commit Table ViewTable Interactive
-        
-        'Get list of existing views
-        Dim iLoop, iRows, iOut as Integer
-        Dim sName(0) as String
-        iRows = TableInfo(ViewTable, TAB_INFO_NROWS)
-        ReDim sName(iRows)
-        For iLoop = 1 to iRows
-           Fetch rec iLoop from ViewTable
-           sName(iLoop) = ViewTable.name
-        Next
-        
-        Dialog
-            Title "View Name"
-            Control StaticText
-                Title "Give your view a name or replace an existing one."
-                Width 200
-            Control RadioGroup
-                Title "&New;&Existing"
-                Value 1
-                Into neworold
-                Position 10, 25
-            Control EditText
-                Into name_var
-                Position 60, 23
-                Width 80
-            Control PopupMenu
-                Title From Variable sName 
-                Into iOut
-                Position 60, 37
-                Width 80
-            Control OKButton
-            Control CancelButton
-        
-        If CommandInfo(CMD_INFO_DLG_OK) Then
-            If neworold = 2 Then
-                Update ViewTable Set 
-                    x_coord     = MapperInfo( mapwindow, MAPPER_INFO_CENTERX ),
-                    y_coord     = MapperInfo( mapwindow, MAPPER_INFO_CENTERY ),
-                    dist_units  = SessionInfo(SESSION_INFO_DISTANCE_UNITS),
-                    map_scale   = MapperInfo(mapwindow, MAPPER_INFO_SCALE),
-                    paper_units = SessionInfo(SESSION_INFO_PAPER_UNITS),
-                    win_width   = WindowInfo(mapwindow, WIN_INFO_WIDTH),
-                    win_height  = WindowInfo(mapwindow, WIN_INFO_HEIGHT)
-                    Where RowID = iOut
-            Else 
-                Insert Into ViewTable
-                    (   name, 
-                        x_coord, 
-                        y_coord, 
-                        dist_units, 
-                        map_scale, 
-                        paper_units,
-                        win_width, 
-                        win_height) 
-                    VALUES 
-                    (   name_var, 
-                        MapperInfo( mapwindow, MAPPER_INFO_CENTERX ), 
-                        MapperInfo( mapwindow, MAPPER_INFO_CENTERY ), 
-                        SessionInfo(SESSION_INFO_DISTANCE_UNITS), 
-                        MapperInfo(mapwindow, MAPPER_INFO_SCALE),
-                        SessionInfo(SESSION_INFO_PAPER_UNITS),
-                        WindowInfo(mapwindow, WIN_INFO_WIDTH), 
-                        WindowInfo(mapwindow, WIN_INFO_HEIGHT)
-                    )
-            End If
-        End If
-    Else
-        Note "Please select a map window first."
+  Dim neworold        as Integer
+  Dim windowlist      as String
+  Dim name_var        as String
+  Dim TableExists     as Integer
+
+  If IsTableOpen("ViewTable") = false Then
+    tableexists = createTable()
+    If tableexists = false Then
+      Exit Sub
     End If
+  Else
+    tableexists = true
+  End If
+  
+  'Save table first otherwise the loop below will make it crash
+  Commit Table ViewTable Interactive
+  Pack Table ViewTable Data Interactive
+  Commit Table ViewTable Interactive
+  
+  'Get list of existing views
+  Dim iLoop, iRows, iOut as Integer
+  Dim sName(0) as String
+  iRows = TableInfo(ViewTable, TAB_INFO_NROWS)
+  ReDim sName(iRows)
+  For iLoop = 1 to iRows
+    Fetch rec iLoop from ViewTable
+    sName(iLoop) = ViewTable.name
+  Next
+  
+  Dialog
+    Title "View Name"
+    Control StaticText
+      Title "Give your view a name or replace an existing one."
+      Width 200
+    Control RadioGroup
+      Title "&New;&Existing"
+      Value 1
+      Into neworold
+      Position 10, 25
+    Control EditText
+      Into name_var
+      Position 60, 23
+      Width 80
+    Control PopupMenu
+      Title From Variable sName 
+      Into iOut
+      Position 60, 37
+      Width 80
+    Control OKButton
+    Control CancelButton
+  
+  If CommandInfo(CMD_INFO_DLG_OK) Then
+    If neworold = 2 Then
+      Update ViewTable Set 
+        x_coord     = MapperInfo( mapwindow, MAPPER_INFO_CENTERX ),
+        y_coord     = MapperInfo( mapwindow, MAPPER_INFO_CENTERY ),
+        dist_units  = SessionInfo(SESSION_INFO_DISTANCE_UNITS),
+        map_scale   = MapperInfo(mapwindow, MAPPER_INFO_SCALE),
+        paper_units = SessionInfo(SESSION_INFO_PAPER_UNITS),
+        win_width   = WindowInfo(mapwindow, WIN_INFO_WIDTH),
+        win_height  = WindowInfo(mapwindow, WIN_INFO_HEIGHT)
+        Where RowID = iOut
+    Else 
+      Insert Into ViewTable
+      ( 
+        name, 
+        x_coord, 
+        y_coord, 
+        dist_units, 
+        map_scale, 
+        paper_units,
+        win_width, 
+        win_height
+      ) VALUES (
+        name_var, 
+        MapperInfo( mapwindow, MAPPER_INFO_CENTERX ), 
+        MapperInfo( mapwindow, MAPPER_INFO_CENTERY ), 
+        SessionInfo(SESSION_INFO_DISTANCE_UNITS), 
+        MapperInfo(mapwindow, MAPPER_INFO_SCALE),
+        SessionInfo(SESSION_INFO_PAPER_UNITS),
+        WindowInfo(mapwindow, WIN_INFO_WIDTH), 
+        WindowInfo(mapwindow, WIN_INFO_HEIGHT)
+      )
+    End If
+  End If
 
 FailedToAdd:
     Exit Sub
@@ -229,86 +232,86 @@ End Sub                                                             'Blockend
 
 
 Sub showView                                                        'Blockstart
-    OnError Goto FailPlace
+  OnError Goto FailPlace
 
-    Dim iLoop, iRows, iOut as Integer
-    Dim sName(0) as String
-    Dim tableexists as integer
+  Dim iLoop, iRows, iOut as Integer
+  Dim sName(0) as String
+  Dim tableexists as integer
 
-    If IsTableOpen("ViewTable") = False Then
-        tableexists = createTable()
-        If tableexists = false Then
-            Exit Sub
-        End If
-    Else
-        tableexists = true
+  If IsTableOpen("ViewTable") = False Then
+    tableexists = createTable()
+    If tableexists = false Then
+      Exit Sub
     End If
+  Else
+    tableexists = true
+  End If
 
-    mapwindow = FrontWindow()
-    
-    'Check window is a map window
-    If WindowInfo(mapwindow, WIN_INFO_TYPE) <> 1 Then
-        Note "Please choose a map window first."
-        Exit Sub
-    End If
+  mapwindow = FrontWindow()
+  
+  'Check window is a map window
+  If WindowInfo(mapwindow, WIN_INFO_TYPE) <> 1 Then
+    Note "Please select a map window first."
+    Exit Sub
+  End If
 
-    'Save and pack table otherwise deleted rows will break things
-    Commit Table ViewTable Interactive
-    Pack Table ViewTable Data Interactive
-    Commit Table ViewTable Interactive
-    
-    iRows = TableInfo(ViewTable, TAB_INFO_NROWS)
-    ReDim sName(iRows)
-    
-    For iLoop = 1 to iRows
-       Fetch rec iLoop from ViewTable
-       sName(iLoop) = ViewTable.name
-    Next
+  'Save and pack table otherwise deleted rows will break things
+  Commit Table ViewTable Interactive
+  Pack Table ViewTable Data Interactive
+  Commit Table ViewTable Interactive
+  
+  iRows = TableInfo(ViewTable, TAB_INFO_NROWS)
+  ReDim sName(iRows)
+  
+  For iLoop = 1 to iRows
+   Fetch rec iLoop from ViewTable
+   sName(iLoop) = ViewTable.name
+  Next
 
-    Dialog
-        Title "Choose a view to go to."
-        Control PopupMenu Title From Variable sName into iOut
-        Control OKButton 
-        Control CancelButton
+  Dialog
+    Title "Choose a view to go to."
+    Control PopupMenu Title From Variable sName into iOut
+    Control OKButton 
+    Control CancelButton
+  
+  If CommandInfo(CMD_INFO_DLG_OK) Then
+    Fetch Rec iOut From ViewTable
+
+    Set Distance Units ViewTable.dist_units
+    Set Paper Units ViewTable.paper_units
+
+    Set Window mapwindow
+      Width  ViewTable.win_width
+      Height ViewTable.win_height
     
-    If CommandInfo(CMD_INFO_DLG_OK) Then
-        Fetch Rec iOut From ViewTable
-    
-        Set Distance Units ViewTable.dist_units
-        Set Paper Units ViewTable.paper_units
-    
-        Set Window mapwindow
-            Width  ViewTable.win_width
-            Height ViewTable.win_height
-        
-        Set Map
-            Window mapwindow
-            Center ( ViewTable.x_coord, ViewTable.y_coord )
-            Scale 1 Units ViewTable.paper_units 
-            For ViewTable.map_scale Units ViewTable.dist_units
-    End If
+    Set Map
+      Window mapwindow
+      Center ( ViewTable.x_coord, ViewTable.y_coord )
+      Scale 1 Units ViewTable.paper_units 
+      For ViewTable.map_scale Units ViewTable.dist_units
+  End If
 
 FailPlace:
-    Exit Sub
+  Exit Sub
 End Sub                                                             'Blockend
 
 
 
 Function IsTableOpen(Byval TName as string) as logical              'Blockstart
-    ' By Yuriy - See http://chimpy.wordpress.com/2009/10/28/mapinfo-viewport-tool/
-    Dim i As Integer
-    Dim result As Logical
+  ' By Yuriy - See http://chimpy.wordpress.com/2009/10/28/mapinfo-viewport-tool/
+  Dim i As Integer
+  Dim result As Logical
 
-    OnError Goto Err_trap
-    Result = FALSE
-    i = TableInfo(TName,TAB_INFO_NCOLS)
-    Result = TRUE
+  OnError Goto Err_trap
+  Result = FALSE
+  i = TableInfo(TName,TAB_INFO_NCOLS)
+  Result = TRUE
 
 exit_func:
-    IsTableOpen = Result
-    Exit Function
+  IsTableOpen = Result
+  Exit Function
 
 Err_trap:
-    Resume exit_func
+  Resume exit_func
 
 End Function                                                        'Blockend
