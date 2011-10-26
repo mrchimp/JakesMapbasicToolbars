@@ -3,6 +3,8 @@
 '* 2011 All Rights Reserved      *
 '*********************************
 
+' Note: Currently only inserts onto cosmetic layer.
+
 Include "mapbasic.def"
 Include "icons.def"
 
@@ -63,7 +65,7 @@ Sub CircleTool
   OnError Goto TheSectionOfFail
 
   Set Distance Units "m"
-  Set Coordsys Earth
+  Set CoordSys Window FrontWindow()
 
   print MapperInfo(FrontWindow(), MAPPER_INFO_DISTUNITS)
 
@@ -92,7 +94,6 @@ Sub CircleTool
     Control CancelButton
       Title "Close"
 
-
   If CommandInfo(CMD_INFO_DLG_OK) Then
     If InputVal <= 0 Then
       Note "Bigger number please."
@@ -107,7 +108,7 @@ Sub CircleTool
       c = InputVal
       r = c / (2 * pi)
       a = pi * r * r
-    elseif InputType = 3 Then ' input = radius
+    else 'input = radius
       r = InputVal
       c = 2 * pi * r
       a = pi * r * r
@@ -115,21 +116,17 @@ Sub CircleTool
   
     d = r * 2
 
-    'call getEditableTable(currentTab)
     currentTab = windowInfo(FrontWindow(), WIN_INFO_TABLE)
-    print Chr$(12)
-    print "currentTab: "&currentTab
-    print "x: " & x
-    print "y: " & y
-    print "r: " & r
-    print "c: " & c
-    print "a: " & a
+    'print Chr$(12)
+    'print "currentTab: "&currentTab
+    'print "x: " & x
+    'print "y: " & y
+    'print "r: " & r
+    'print "c: " & c
+    'print "a: " & a
     
     NiceCircle = CreateCircle(x, y, r)
-    Print NiceCircle
     INSERT INTO currentTab (obj) VALUES (NiceCircle)
-    ' Note "x: "+Round(CommandInfo(CMD_INFO_X), 0.1)+Chr$(10) +
-    '      "y: "+Round(CommandInfo(CMD_INFO_Y), 0.1)
   End If
      
   Exit Sub
