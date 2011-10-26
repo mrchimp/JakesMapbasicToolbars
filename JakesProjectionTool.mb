@@ -1,0 +1,343 @@
+'************************************************
+'*      Jake's Amazing Projection Tool          *
+'*      2011 Bragging rights reserved           *
+'************************************************
+
+Include "icons.def"
+Include "mapbasic.def"
+
+Declare Sub Main
+Declare Sub NotReadyYet
+Declare Sub GetTableCoordSys
+Declare Sub GetWindowCoordSys
+Declare Function ChooseTable As String
+Declare Sub GetTableList (TableList() as String)
+Declare Function ChooseWindow As String
+Declare Function ChooseWindowNum As String 
+Declare Sub GetWindowList (WindowList() as String)
+Declare Sub GetWindowInfo
+Declare Function WindowTypeNumToString (TypeNum as Integer) As String
+
+Sub Main                                                            'Blockstart
+  Create Menu "&Projections" As
+    "View Table's Coord System" Calling GetTableCoordSys,
+    "View Window's Coord System" Calling GetWindowCoordSys,
+    "Change Table's Projection" Calling NotReadyYet,
+    "Get window info" Calling GetWindowInfo
+  Alter Menu Bar Add "Projections"
+End Sub                                                             'Blockend
+
+
+' Main Functions
+Sub NotReadyYet                                                     'Blockstart
+  Note "That's not ready yet."
+End Sub                                                             'Blockend
+
+Sub GetTableCoordSys                                                'Blockstart
+  Dim TableName as String
+  TableName = ChooseTable()
+
+  If TableName <> "" Then ' check user didn't press cancel
+    Dim TheProjection as String
+    TheProjection = TableInfo(TableName, TAB_INFO_COORDSYS_CLAUSE)
+    
+    Note "The coordinate system for " + TableName + " is:" +
+          Chr$(10) + CoordSysName$(TheProjection) & Chr$(10) & Chr$(10) & 
+          "Full MapInfo coord string: " & Chr$(10) & TheProjection
+  End If
+End Sub                                                             'Blockend
+
+Sub GetWindowCoordSys                                               'Blockstart
+  Dim WindowNum as integer
+  Dim TheProjection as String
+  Dim WindowType as Integer
+  Dim TheWindowID as integer
+  
+  WindowNum = FrontWindow()
+  WindowType = WindowInfo(WindowNum, WIN_INFO_TYPE)
+  TheWindowID = WindowID(WindowNum)
+
+  ' If Mapper window:
+  If WindowType = WIN_MAPPER Then
+    TheProjection = MapperInfo(TheWindowID, MAPPER_INFO_COORDSYS_CLAUSE)
+    'Note WindowInfo(TheWindowID, WIN_INFO_NAME) & " has the projection: " & Chr$(10) & TheProjection
+    Note "The projection is:" +
+          Chr$(10) + CoordSysName$(TheProjection) & Chr$(10) & Chr$(10) & 
+          "Full MapInfo coord string: " & Chr$(10) & TheProjection
+  ElseIf WindowType = WIN_BROWSER Then
+    Dim TableName as String 
+    TableName = WindowInfo(TheWindowId, WIN_INFO_TABLE)
+    TheProjection = TableInfo(TableName, TAB_INFO_COORDSYS_CLAUSE)
+    'Note "The table " & TableName & " has projection: " & Chr$(10) & TheProjection
+    Note "The projection for " + TableName + " is:" +
+          Chr$(10) + CoordSysName$(TheProjection) & Chr$(10) & Chr$(10) & 
+          "Full MapInfo coord string: " & Chr$(10) & TheProjection
+  ElseIf WindowType = WIN_LAYOUT Then
+      
+  Else
+    Note "Can't get the projection for that window."
+  End If
+End Sub                                                             'Blockend
+
+Sub GetWindowInfo                                                   'Blockstart
+  Dim WindowNum as Integer
+  
+  WindowNum = ChooseWindowNum()
+  
+  If WindowNum = 0 Then
+    Exit Sub
+  End If
+  
+  Print Chr$(12)
+  
+  Set Paper Units "cm"
+  
+  Print "== Session Info =="
+  Print "Coord sys clause: " & SessionInfo(SESSION_INFO_COORDSYS_CLAUSE)
+  Print "Distance units: " & SessionInfo(SESSION_INFO_DISTANCE_UNITS)
+  Print "Area units: " & SessionInfo(SESSION_INFO_AREA_UNITS)
+  Print "Paper units: " & SessionInfo(SESSION_INFO_PAPER_UNITS)
+  
+  Print Chr$(10) & "== Window Info =="
+  Print "Window name: " & WindowInfo(WindowNum, WIN_INFO_NAME)
+  Print "WindowID: " & WindowInfo(WindowNum, WIN_INFO_WINDOWID)
+  Print "Type: " & WindowInfo(WindowNum, WIN_INFO_TYPE)
+  
+  
+  Print Chr$(10) & "== Size and Location =="
+  Print "Window width: " & WindowInfo(WindowNum, WIN_INFO_WIDTH) & " " & SessionInfo(SESSION_INFO_PAPER_UNITS)
+  Print "Window height: " & WindowInfo(WindowNum, WIN_INFO_HEIGHT) & " " & SessionInfo(SESSION_INFO_PAPER_UNITS)
+  Print "X: " & WindowInfo(WindowNum, WIN_INFO_X)
+  Print "Y: " & WindowInfo(WindowNum, WIN_INFO_Y)
+  
+  Print "Autoscroll: " & WindowInfo(WindowNum, WIN_INFO_AUTOSCROLL)
+  Print "Open: " & WindowInfo(WindowNum, WIN_INFO_OPEN)
+  Print "Smart pan: " & WindowInfo(WindowNum, WIN_INFO_SMARTPAN)
+    Dim WinState as Smallint 
+    WinState = WindowInfo(WindowNum, WIN_INFO_STATE)
+    If WinState = WIN_STATE_NORMAL Then
+      Print "State: Normal"
+    ElseIf WinState = WIN_STATE_MINIMIZED Then
+      Print "State: Minimized"
+    ElseIf WinState = WIN_STATE_MAXIMIZED Then
+      Print "State: Maximized"
+    End If
+  Print "SysMenuClose: " & WindowInfo(WindowNum, WIN_INFO_SYSMENUCLOSE)
+  Print "Table (cosmetic layer if mapper): " & WindowInfo(WindowNum, WIN_INFO_TABLE)
+  Print "Top-most: " & WindowInfo(WindowNum, WIN_INFO_TOPMOST)
+  Print "Windows HWND: " & WindowInfo(WindowNum, WIN_INFO_WND)
+  Print "SnapMode: " & WindowInfo(WindowNum, WIN_INFO_SNAPMODE)
+  Print "SnapThreshold: " & WindowInfo(WindowNum, WIN_INFO_SNAPTHRESHOLD)
+  
+  ' Print Chr$(10) & "== Printer =="
+  ' Print "PrinterName: " & WindowInfo(WindowNum, WIN_INFO_PRINTER_NAME)
+  ' Print "PrinterOrientation: " & WindowInfo(WindowNum, WIN_INFO_PRINTER_ORIENT)
+  ' Print "PrinterCopies: " & WindowInfo(WindowNum, WIN_INFO_PRINTER_COPIES)
+  ' Print "PrinterPapersize: " & WindowInfo(WindowNum, WIN_INFO_PRINTER_PAPERSIZE)
+  ' Print "PrinterLeftMargin: " & WindowInfo(WindowNum, WIN_INFO_PRINTER_LEFTMARGIN)
+  ' Print "PrinterRightMargin: " & WindowInfo(WindowNum, WIN_INFO_PRINTER_RIGHTMARGIN)
+  ' Print "PrinterTopMargin: " & WindowInfo(WindowNum, WIN_INFO_PRINTER_TOPMARGIN)
+  ' Print "PrinterBottomMargin: " & WindowInfo(WindowNum, WIN_INFO_PRINTER_BOTTOMMARGIN)
+  ' Print "PrinterBorder: " & WindowInfo(WindowNum, WIN_INFO_PRINTER_BORDER)
+  ' Print "PrinterTrueColor: " & WindowInfo(WindowNum, WIN_INFO_PRINTER_TRUECOLOR)
+  ' Print "PrinterDither: " & WindowInfo(WindowNum, WIN_INFO_PRINTER_DITHER)
+  ' Print "PrinterMethod: " & WindowInfo(WindowNum, WIN_INFO_PRINTER_METHOD)
+  ' Print "PrinterTranspRaster: " & WindowInfo(WindowNum, WIN_INFO_PRINTER_TRANSPRASTER)
+  ' Print "PrinterTranspVector: " & WindowInfo(WindowNum, WIN_INFO_PRINTER_TRANSPVECTOR)
+  ' Print "Printer Scale Patterns: " & WindowInfo(WindowNum, WIN_INFO_PRINTER_SCALE_PATTERNS)
+  
+  ' Print Chr$(10) & "== Export =="
+  ' Print "Export Border: " & WindowInfo(WindowNum, WIN_INFO_EXPORT_BORDER)
+  ' Print "Export Truecolor: " & WindowInfo(WindowNum, WIN_INFO_EXPORT_TRUECOLOR)
+  ' Print "Export Dither: " & WindowInfo(WindowNum, WIN_INFO_EXPORT_DITHER)
+  ' Print "Export Transp Raster: " & WindowInfo(WindowNum, WIN_INFO_EXPORT_TRANSPRASTER)
+  ' Print "Export Transp Vector: " & WindowInfo(WindowNum, WIN_INFO_EXPORT_TRANSPVECTOR)
+  ' Print "Export Antialiasing: " & WindowInfo(WindowNum, WIN_INFO_EXPORT_ANTIALIASING)
+  ' Print "Export Threshold: " & WindowInfo(WindowNum, WIN_INFO_EXPORT_THRESHOLD)
+  ' Print "Export Masksize: " & WindowInfo(WindowNum, WIN_INFO_EXPORT_MASKSIZE)
+  ' Print "Export Filter: " & WindowInfo(WindowNum, WIN_INFO_EXPORT_FILTER)
+  ' Print "Enhanced Rendering: " & WindowInfo(WindowNum, WIN_INFO_ENHANCED_RENDERING)
+  ' Print "Smooth Text: " & WindowInfo(WindowNum, WIN_INFO_SMOOTH_TEXT)
+  ' Print "Smooth Image: " & WindowInfo(WindowNum, WIN_INFO_SMOOTH_IMAGE)
+  ' Print "Smooth Vector: " & WindowInfo(WindowNum, WIN_INFO_SMOOTH_VECTOR)
+
+  'Print "Workspace: " & WindowInfo(WindowNum, WIN_INFO_WORKSPACE)
+  'Print "Clone Window Code: " & WindowInfo(WindowNum, WIN_INFO_CLONEWINDOW)    
+  
+  If WindowInfo(WindowNum, WIN_INFO_TYPE) = WIN_MAPPER Then
+    Dim TheWindowID as integer
+    TheWindowID = WindowInfo(WindowNum, WIN_INFO_WINDOWID)
+    
+    Print Chr$(10) & "== Mapper Info =="
+    
+    Print "Zoom: " & MapperInfo(TheWindowID, MAPPER_INFO_ZOOM) & " " & MapperInfo(TheWindowID, MAPPER_INFO_DISTUNITS)
+    Print "Scale: " & MapperInfo(TheWindowID, MAPPER_INFO_SCALE) & " " & MapperInfo(TheWindowID, MAPPER_INFO_DISTUNITS) & " per " & SessionInfo(SESSION_INFO_PAPER_UNITS)
+    Print "Window CenterXY Coords: " & MapperInfo(TheWindowID, MAPPER_INFO_CENTERX) & ", " & MapperInfo(TheWindowID, MAPPER_INFO_CENTERY)
+    Print "MinX: " & MapperInfo(TheWindowID, MAPPER_INFO_MINX)
+    Print "MinY: " & MapperInfo(TheWindowID, MAPPER_INFO_MINY)
+    Print "MaxX: " & MapperInfo(TheWindowID, MAPPER_INFO_MAXX)
+    Print "MaxY: " & MapperInfo(TheWindowID, MAPPER_INFO_MAXY)
+    Print "Coord (XY) units: " & MapperInfo(TheWindowID, MAPPER_INFO_XYUNITS)
+    Print "Distance units: " & MapperInfo(TheWindowID, MAPPER_INFO_DISTUNITS)
+    Print "Number of layers: " & MapperInfo(TheWindowID, MAPPER_INFO_LAYERS)
+    Print "Area units: " & MapperInfo(TheWindowID, MAPPER_INFO_AREAUNITS)
+    Print "Scrollbars displayed? " & MapperInfo(TheWindowID, MAPPER_INFO_SCROLLBARS)
+    Print "Status bar display: " & MapperInfo(TheWindowID, MAPPER_INFO_DISPLAY)
+    Print "Number of Thematic Layers: " & MapperInfo(TheWindowID, MAPPER_INFO_NUM_THEMATIC)
+    Print "Coordsys name: " & MapperInfo(TheWindowID, MAPPER_INFO_COORDSYS_NAME)
+    Print "Coord sys with bounds: " & MapperInfo(TheWindowID, MAPPER_INFO_COORDSYS_CLAUSE_WITH_BOUNDS)
+    Print "Move duplicate nodes: " & MapperInfo(TheWindowID, MAPPER_INFO_MOVE_DUPLICATE_NODES)
+    
+    If MapperInfo(TheWindowID, MAPPER_INFO_DIST_CALC_TYPE) = 0 Then
+      Print "Dist calc type: Spherical"
+    ElseIf MapperInfo(TheWindowID, MAPPER_INFO_DIST_CALC_TYPE) = 1 Then
+      Print "Dist calc type: Cartesian"
+    End If
+    
+    If MapperInfo(TheWindowID, MAPPER_INFO_DISPLAY_DMS) = 0 Then
+      Print "Display DMS: Decimal"
+    ElseIf MapperInfo(TheWindowID, MAPPER_INFO_DISPLAY_DMS) = 1 Then
+      Print "Display DMS: DegMinSec"
+    ElseIf MapperInfo(TheWindowID, MAPPER_INFO_DISPLAY_DMS) = 2 Then
+      Print "Display DMS: Military Grid Reference System"
+    ElseIf MapperInfo(TheWindowID, MAPPER_INFO_DISPLAY_DMS) = 3 Then
+      Print "Display DMS: US National Grid NAD 83/WGS 84"
+    ElseIf MapperInfo(TheWindowID, MAPPER_INFO_DISPLAY_DMS) = 4 Then
+      Print "Display DMS: US National Grid NAD 27"
+    End If
+    
+    If MapperInfo(TheWindowID, MAPPER_INFO_CLIP_TYPE) = 0 Then
+      Print "Clip type: Display all"
+    ElseIf MapperInfo(TheWindowID, MAPPER_INFO_CLIP_TYPE) = 1 Then
+      Print "Clip type: Display polyobj"
+    ElseIf MapperInfo(TheWindowID, MAPPER_INFO_CLIP_TYPE) = 1 Then
+      Print "Clip type: Overlay"
+    End If
+    
+    Print "Clip region: " & MapperInfo(TheWindowID, MAPPER_INFO_CLIP_REGION)
+    Print "Reprojection: " & MapperInfo(TheWindowID, MAPPER_INFO_REPROJECTION)
+    Print "Resampling: " & MapperInfo(TheWindowID, MAPPER_INFO_RESAMPLING)
+    'Print "Merge Map: " & MapperInfo(TheWindowID, MAPPER_INFO_MERGE_MAP)
+    Print "Total num all layers: " & MapperInfo(TheWindowID, MAPPER_INFO_ALL_LAYERS)
+    Print "Total num group layers: " & MapperInfo(TheWindowID, MAPPER_INFO_GROUPLAYERS)
+    Print "Total num adornment layers: " & MapperInfo(TheWindowID, MAPPER_INFO_NUM_ADORNMENTS)
+  End If
+End Sub                                                             'Blockend
+
+
+' HELPERS
+
+Sub GetTableList (TableList() as String)                            'Blockstart
+  Dim i as integer
+  Dim j as integer
+  i = NumTables()
+  ReDim TableList(i)
+  For j = 1 to i
+    TableList(j) = TableInfo(j, TAB_INFO_NAME)
+  Next
+End Sub                                                             'Blockend
+
+Sub GetWindowList (WindowList() as String)                          'Blockstart
+  Dim i as integer
+  Dim j as integer
+  i = NumWindows()
+  ReDim WindowList(i)
+  For j = 1 to i
+    WindowList(j) = WindowInfo(j, WIN_INFO_NAME)
+  Next
+End Sub                                                             'Blockend
+
+Function ChooseTable As String                                      'Blockstart
+  Dim TableNum As Integer
+  Dim TableArray(1) As String
+  
+  Call GetTableList(TableArray)
+  
+  Dialog
+    Title "Choose table"
+    Control PopupMenu
+      Title From Variable TableArray
+      Into TableNum
+    Control OKButton
+    Control Cancelbutton
+    
+  If CommandInfo(CMD_INFO_DLG_OK) Then
+    ChooseTable = TableInfo(TableNum, TAB_INFO_NAME)
+  End If
+End Function                                                        'Blockend
+
+Function ChooseWindow As String                                     'Blockstart
+  Dim WindowNum As Integer
+  Dim WindowArray(1) As String
+  
+  Call GetWindowList(WindowArray)
+  
+  Dialog
+    Title "Choose a window"
+    Control PopupMenu
+      Title From Variable WindowArray
+      Into WindowNum
+    Control OKButton
+    Control Cancelbutton
+    
+  If CommandInfo(CMD_INFO_DLG_OK) Then
+    ChooseWindow = WindowInfo(WindowNum, WIN_INFO_NAME)
+  End If
+End Function                                                        'Blockend
+
+Function ChooseWindowNum As String                                  'Blockstart
+  Dim WindowNum As Integer
+  Dim WindowArray(1) As String
+  
+  Call GetWindowList(WindowArray)
+  
+  Dialog
+    Title "Choose a window"
+    Control PopupMenu
+      Title From Variable WindowArray
+      Into WindowNum
+    Control OKButton
+    Control Cancelbutton
+      
+  If CommandInfo(CMD_INFO_DLG_OK) Then
+    ChooseWindowNum = WindowNum
+  End If
+End Function                                                        'Blockend
+
+Function WindowTypeNumToString (TypeNum as Integer) As String       'Blockstart
+  If TypeNum = WIN_MAPPER Then
+    WindowTypeNumToString = "WIN_MAPPER"
+  ElseIf TypeNum = WIN_BROWSER Then
+    WindowTypeNumToString = "WIN_BROWSER"
+  ElseIf TypeNum = WIN_LAYOUT Then
+    WindowTypeNumToString = "WIN_LAYOUT"
+  ElseIf TypeNum = WIN_GRAPH Then
+    WindowTypeNumToString = "WIN_GRAPH"
+  ElseIf TypeNum = WIN_BUTTONPAD Then
+    WindowTypeNumToString = "WIN_BUTTONPAD"
+  ElseIf TypeNum = WIN_TOOLBAR Then
+    WindowTypeNumToString = "WIN_TOOLBAR"
+  ElseIf TypeNum = WIN_CART_LEGEND Then
+    WindowTypeNumToString = "WIN_CART_LEGEND"
+  ElseIf TypeNum = WIN_ADORNMENT Then
+    WindowTypeNumToString = "WIN_ADORNMENT"
+  ElseIf TypeNum = WIN_3DMAP Then
+    WindowTypeNumToString = "WIN_3DMAP"
+  ElseIf TypeNum = WIN_HELP Then
+    WindowTypeNumToString = "WIN_HELP"
+  ElseIf TypeNum = WIN_MAPBASIC Then
+    WindowTypeNumToString = "WIN_MAPBASIC"
+  ElseIf TypeNum = WIN_MESSAGE Then
+    WindowTypeNumToString = "WIN_MESSAGE"
+  ElseIf TypeNum = WIN_RULER Then
+    WindowTypeNumToString = "WIN_RULER"
+  ElseIf TypeNum = WIN_INFO Then
+    WindowTypeNumToString = "WIN_INFO"
+  ElseIf TypeNum = WIN_LEGEND Then
+    WindowTypeNumToString = "WIN_LEGEND"
+  ElseIf TypeNum = WIN_STATISTICS Then
+    WindowTypeNumToString = "WIN_STATISTICS"
+  ElseIf TypeNum = WIN_MAPINFO Then
+    WindowTypeNumToString = "WIN_MAPINFO"
+  End If
+End Function                                                        'Blockend
