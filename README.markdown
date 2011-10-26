@@ -9,7 +9,8 @@ Contents
 
 JakesToolbar
 ------------
-* Batch export plans - export one plan per record in table with just a few clicks . ![Screenshot](http://deviouschimp.co.uk/misc/SitePlanExporterScreenshot.png "Screenshot")
+* Batch export plans - export one plan per record in table with just a few clicks .
+![Screenshot](http://deviouschimp.co.uk/misc/SitePlanExporterScreenshot.png "Screenshot")
 * Show unmapped records
 * Show overlapping objects
 * Update areas
