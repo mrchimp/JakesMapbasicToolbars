@@ -81,7 +81,7 @@ End Sub                                                             'Blockend
 
 Sub GetWindowInfo                                                   'Blockstart
   Dim WindowNum as Integer
-  
+ 
   WindowNum = ChooseWindowNum()
   
   If WindowNum = 0 Then
@@ -166,6 +166,10 @@ Sub GetWindowInfo                                                   'Blockstart
   
   If WindowInfo(WindowNum, WIN_INFO_TYPE) = WIN_MAPPER Then
     Dim TheWindowID as integer
+    Dim DisplayDMS as Integer
+    Dim ClipType as Integer
+    Dim DistCalcType as Integer
+ 
     TheWindowID = WindowInfo(WindowNum, WIN_INFO_WINDOWID)
     
     Print Chr$(10) & "== Mapper Info =="
@@ -187,32 +191,39 @@ Sub GetWindowInfo                                                   'Blockstart
     Print "Coordsys name: " & MapperInfo(TheWindowID, MAPPER_INFO_COORDSYS_NAME)
     Print "Coord sys with bounds: " & MapperInfo(TheWindowID, MAPPER_INFO_COORDSYS_CLAUSE_WITH_BOUNDS)
     Print "Move duplicate nodes: " & MapperInfo(TheWindowID, MAPPER_INFO_MOVE_DUPLICATE_NODES)
+   
+    DistCalcType = MapperInfo(TheWindowID, MAPPER_INFO_DIST_CALC_TYPE)
+    Do Case DistCalcType
+      Case 0
+        Print "Dist calc type: Spherical"
+      Case 1
+        Print "Dist calc type: Cartesian"
+    End Case
     
-    If MapperInfo(TheWindowID, MAPPER_INFO_DIST_CALC_TYPE) = 0 Then
-      Print "Dist calc type: Spherical"
-    ElseIf MapperInfo(TheWindowID, MAPPER_INFO_DIST_CALC_TYPE) = 1 Then
-      Print "Dist calc type: Cartesian"
-    End If
+
+    DisplayDMS = MapperInfo(TheWindowID, MAPPER_INFO_DISPLAY_DMS)
+    Do Case DisplayDMS
+      Case 0
+        Print "Display DMS: Decimal"
+      Case 1
+        Print "Display DMS: DegMinSec"
+      Case 2
+        Print "Display DMS: Military Grid Reference System"
+      Case 3
+        Print "Display DMS: US National Grid NAD 83/WGS 84"
+      Case 4
+        Print "Display DMS: US National Grid NAD 27"
+    End Case
     
-    If MapperInfo(TheWindowID, MAPPER_INFO_DISPLAY_DMS) = 0 Then
-      Print "Display DMS: Decimal"
-    ElseIf MapperInfo(TheWindowID, MAPPER_INFO_DISPLAY_DMS) = 1 Then
-      Print "Display DMS: DegMinSec"
-    ElseIf MapperInfo(TheWindowID, MAPPER_INFO_DISPLAY_DMS) = 2 Then
-      Print "Display DMS: Military Grid Reference System"
-    ElseIf MapperInfo(TheWindowID, MAPPER_INFO_DISPLAY_DMS) = 3 Then
-      Print "Display DMS: US National Grid NAD 83/WGS 84"
-    ElseIf MapperInfo(TheWindowID, MAPPER_INFO_DISPLAY_DMS) = 4 Then
-      Print "Display DMS: US National Grid NAD 27"
-    End If
-    
-    If MapperInfo(TheWindowID, MAPPER_INFO_CLIP_TYPE) = 0 Then
-      Print "Clip type: Display all"
-    ElseIf MapperInfo(TheWindowID, MAPPER_INFO_CLIP_TYPE) = 1 Then
-      Print "Clip type: Display polyobj"
-    ElseIf MapperInfo(TheWindowID, MAPPER_INFO_CLIP_TYPE) = 1 Then
-      Print "Clip type: Overlay"
-    End If
+    ClipType = MapperInfo(TheWindowID, MAPPER_INFO_CLIP_TYPE)
+    Do Case ClipType
+      Case 0
+        Print "Clip type: Display all"
+      Case 1
+        Print "Clip type: Display polyobj"
+      Case 2
+        Print "Clip type: Overlay"
+    End Case
     
     Print "Clip region: " & MapperInfo(TheWindowID, MAPPER_INFO_CLIP_REGION)
     Print "Reprojection: " & MapperInfo(TheWindowID, MAPPER_INFO_REPROJECTION)
@@ -305,39 +316,40 @@ Function ChooseWindowNum As String                                  'Blockstart
 End Function                                                        'Blockend
 
 Function WindowTypeNumToString (TypeNum as Integer) As String       'Blockstart
-  If TypeNum = WIN_MAPPER Then
-    WindowTypeNumToString = "WIN_MAPPER"
-  ElseIf TypeNum = WIN_BROWSER Then
-    WindowTypeNumToString = "WIN_BROWSER"
-  ElseIf TypeNum = WIN_LAYOUT Then
-    WindowTypeNumToString = "WIN_LAYOUT"
-  ElseIf TypeNum = WIN_GRAPH Then
-    WindowTypeNumToString = "WIN_GRAPH"
-  ElseIf TypeNum = WIN_BUTTONPAD Then
-    WindowTypeNumToString = "WIN_BUTTONPAD"
-  ElseIf TypeNum = WIN_TOOLBAR Then
-    WindowTypeNumToString = "WIN_TOOLBAR"
-  ElseIf TypeNum = WIN_CART_LEGEND Then
-    WindowTypeNumToString = "WIN_CART_LEGEND"
-  ElseIf TypeNum = WIN_ADORNMENT Then
-    WindowTypeNumToString = "WIN_ADORNMENT"
-  ElseIf TypeNum = WIN_3DMAP Then
-    WindowTypeNumToString = "WIN_3DMAP"
-  ElseIf TypeNum = WIN_HELP Then
-    WindowTypeNumToString = "WIN_HELP"
-  ElseIf TypeNum = WIN_MAPBASIC Then
-    WindowTypeNumToString = "WIN_MAPBASIC"
-  ElseIf TypeNum = WIN_MESSAGE Then
-    WindowTypeNumToString = "WIN_MESSAGE"
-  ElseIf TypeNum = WIN_RULER Then
-    WindowTypeNumToString = "WIN_RULER"
-  ElseIf TypeNum = WIN_INFO Then
-    WindowTypeNumToString = "WIN_INFO"
-  ElseIf TypeNum = WIN_LEGEND Then
-    WindowTypeNumToString = "WIN_LEGEND"
-  ElseIf TypeNum = WIN_STATISTICS Then
-    WindowTypeNumToString = "WIN_STATISTICS"
-  ElseIf TypeNum = WIN_MAPINFO Then
-    WindowTypeNumToString = "WIN_MAPINFO"
-  End If
+  Do Case TypeNum
+    Case WIN_MAPPER
+      WindowTypeNumToString = "WIN_MAPPER"
+    Case WIN_BROWSER 
+      WindowTypeNumToString = "WIN_BROWSER"
+    Case WIN_LAYOUT
+      WindowTypeNumToString = "WIN_LAYOUT"
+    Case WIN_GRAPH
+      WindowTypeNumToString = "WIN_GRAPH"
+    Case WIN_BUTTONPAD
+      WindowTypeNumToString = "WIN_BUTTONPAD"
+    Case WIN_TOOLBAR
+      WindowTypeNumToString = "WIN_TOOLBAR"
+    Case WIN_CART_LEGEND
+      WindowTypeNumToString = "WIN_CART_LEGEND"
+    Case WIN_ADORNMENT
+      WindowTypeNumToString = "WIN_ADORNMENT"
+    Case WIN_3DMAP
+      WindowTypeNumToString = "WIN_3DMAP"
+    Case WIN_HELP
+      WindowTypeNumToString = "WIN_HELP"
+    Case WIN_MAPBASIC
+      WindowTypeNumToString = "WIN_MAPBASIC"
+    Case WIN_MESSAGE
+      WindowTypeNumToString = "WIN_MESSAGE"
+    Case WIN_RULER
+      WindowTypeNumToString = "WIN_RULER"
+    Case WIN_INFO
+      WindowTypeNumToString = "WIN_INFO"
+    Case WIN_LEGEND
+      WindowTypeNumToString = "WIN_LEGEND"
+    Case WIN_STATISTICS
+      WindowTypeNumToString = "WIN_STATISTICS"
+    Case WIN_MAPINFO
+      WindowTypeNumToString = "WIN_MAPINFO"
+  End Case
 End Function                                                        'Blockend

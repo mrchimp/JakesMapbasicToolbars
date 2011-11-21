@@ -1,9 +1,10 @@
-'*********************************
-'* Jake's Amazing Circle Tool    *
-'* 2011 All Rights Reserved      *
-'*********************************
-
-' Note: Currently only inserts onto cosmetic layer.
+'******************************
+'* Jake's Amazing Circle Tool *
+'* 2011 - All Rights Reserved *
+'******************************
+'*
+'* Note: Currently only inserts onto cosmetic layer.
+'*
 
 Include "mapbasic.def"
 Include "icons.def"
@@ -18,8 +19,14 @@ Global InputTypes(3) as String
 Global UnitTypes(3) as String
 
 Define pi 3.14159265
+Define INPUT_AREA 1
+Define INPUT_CIRCUMFERENCE 2
+Define INPUT_RADIUS 3
 
 Sub Main
+  Set Distance Units "m"
+  Set CoordSys Window FrontWindow()
+
   InputTypes(1) = "Area"
   InputTypes(2) = "Circumference"
   InputTypes(3) = "Radius"
@@ -48,17 +55,17 @@ Sub ExitProg
 End Sub
 
 Sub GetEditableTable(TableName as String)
-    Dim i as integer
-    Dim j as integer
-    Dim TableList(1) as String
-    i = NumTables()
-    ReDim TableList(i)
-    For j = 1 to i
-      If TableInfo(j, LAYER_INFO_EDITABLE) Then
-        TableName = TableInfo(j, TAB_INFO_NAME)
-        Exit Sub
-      End If
-    Next
+  Dim i as integer
+  Dim j as integer
+  Dim TableList(1) as String
+  i = NumTables()
+  ReDim TableList(i)
+  For j = 1 to i
+    If TableInfo(j, LAYER_INFO_EDITABLE) Then
+      TableName = TableInfo(j, TAB_INFO_NAME)
+      Exit Sub
+    End If
+  Next
 End Sub
 
 Sub CircleTool
@@ -66,8 +73,6 @@ Sub CircleTool
 
   Set Distance Units "m"
   Set CoordSys Window FrontWindow()
-
-  print MapperInfo(FrontWindow(), MAPPER_INFO_DISTUNITS)
 
   Dim InputVal, a, r, c, d, x, y as float
   Dim currentTab as String
@@ -100,19 +105,20 @@ Sub CircleTool
       Exit Sub
     End If
   
-    If InputType = 1 Then 'input = area
-      a = InputVal
-      r = Sqr(a / pi)
-      c = r * 2 * pi
-    elseif InputType = 2 Then 'input = circumference
-      c = InputVal
-      r = c / (2 * pi)
-      a = pi * r * r
-    else 'input = radius
-      r = InputVal
-      c = 2 * pi * r
-      a = pi * r * r
-    End If
+    Do Case InputType
+      Case INPUT_AREA
+        a = InputVal
+        r = Sqr(a / pi)
+        c = r * 2 * pi
+      Case INPUT_CIRCUMFERENCE
+        c = InputVal
+        r = c / (2 * pi)
+        a = pi * r * r
+      Case INPUT_RADIUS
+        r = InputVal
+        c = 2 * pi * r
+        a = pi * r * r
+    End Case
   
     d = r * 2
 
