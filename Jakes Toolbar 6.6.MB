@@ -119,7 +119,7 @@ Declare Sub GetWindowList (WindowList() as String)
 
 
 Sub Main                                                            'Blockstart
-	OnError goto MainError
+    OnError goto MainError
 
     ' Populate filetypes array
     FileTypeArray(1)  = "PNG"
@@ -158,7 +158,7 @@ MainError:
 End Sub                                                             'Blockend
 
 Sub ShowUnmapped                                                    'Blockstart
-	OnError goto UnmappedError
+    OnError goto UnmappedError
 
     Dim TableNum as Integer
     Dim TableName as String
@@ -167,6 +167,10 @@ Sub ShowUnmapped                                                    'Blockstart
     Dim TableNums(1) As String
     Dim i, j as integer
     i = NumTables()
+    If i = 0 Then
+      Note "Nothing is mapped. In fact nothing is open at all."
+      Exit Sub
+    End If
     ReDim TableNums(i)
     For j = 1 to i
         TableNums(j) = Tableinfo(j,TAB_INFO_NAME)
@@ -229,6 +233,10 @@ Sub SiteAreaUpdate                                                  'Blockstart
     Dim i as integer
     Dim j as integer
     i = NumTables()
+    If i = 0 Then
+      Note "You're going to need a table open before you do that."
+      Exit Sub
+    End If
     ReDim TableNums(i)
     For j = 1 to i
         TableNums(j) = Tableinfo(j,TAB_INFO_NAME)
@@ -470,8 +478,6 @@ Sub ProgressBarExport                                               'Blockstart
     Dim TimerEnd            as Integer
     
     Dim sMarker             as String
-    Dim TableNum            as Integer
-    Dim ColumnListVar(10)   as String
     Dim SiteRefNum          as Integer
     Dim SiteLabelNum        as Integer
     Dim TableName           as String
@@ -479,10 +485,17 @@ Sub ProgressBarExport                                               'Blockstart
     Dim WindowWidth         as Integer
     Dim WindowHeight        as Integer
     
-    Dim TableNums(1) As String
+    Dim ColumnListVar(10)   as String
+    Dim TableNum            as Integer
+    Dim TableNums(1)        As String
+
     Dim i as integer
     Dim j as integer
     i = NumTables()
+    If i = 0 Then
+      Note "You'll need to open at least one table first."
+      Exit Sub
+    End If
     ReDim TableNums(i)
     For j = 1 to i
         TableNums(j) = Tableinfo(j,TAB_INFO_NAME)
@@ -492,6 +505,10 @@ Sub ProgressBarExport                                               'Blockstart
     Dim k As Integer
     Dim l As Integer
     k = NumWindows()
+    If k = 0 Then
+      Note "You'll need to make a map window first."
+      Exit Sub
+    End If
     ReDim WindowNums(k)
     For l = 1 to k
         If WindowInfo(l, WIN_INFO_TYPE) = WIN_MAPPER Then
@@ -890,6 +907,10 @@ Sub OverlapDetector                                                 'Blockstart
     Dim i as integer
     Dim j as integer
     i = NumTables()
+    If i = 0 Then
+      Note "You're going to need to open a table before you do that."
+      Exit Sub
+    End If
     ReDim TableNums(i)
     For j = 1 to i
         TableNums(j) = Tableinfo(j,TAB_INFO_NAME)
