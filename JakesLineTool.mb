@@ -1,0 +1,56 @@
+'****************************************************
+'* Jake's Amazing Line Tool                         *
+'* https://github.com/mrchimp/JakesMapbasicToolbars *
+'****************************************************
+
+Include "mapbasic.def"
+Include "icons.def"
+
+Declare Sub Main
+Declare Sub LineTool
+Declare Sub ExitProg
+
+Sub Main
+  Alter ButtonPad "Drawing"
+    Add 
+      Separator
+      ToolButton
+        Icon MI_ICON_LINE
+        HelpMsg "Click and drag on a map window to draw a line."
+        Cursor MI_CURSOR_CROSSHAIR
+        DrawMode DM_CUSTOM_LINE
+        Calling LineTool
+    Show
+
+  Create Menu "Jake's Tools" As
+    "Close Jake's Line Tool" Calling ExitProg
+
+  Alter Menu "Tools" Add
+    "(-",
+    "Jake's Tools" as "Jake's Tools"
+End Sub
+Sub ExitProg
+  End Program
+End Sub
+
+Sub LineTool
+  Dim x, y, x2, y2 as float
+  Dim NiceLine     as Object
+  Dim CurrentTab   as string
+
+  Set Distance Units "m"
+  Set Coordsys Window FrontWindow() 
+  
+  x = CommandInfo(CMD_INFO_X)
+  y = CommandInfo(CMD_INFO_Y)
+  x2 = CommandInfo(CMD_INFO_X2)
+  y2 = CommandInfo(CMD_INFO_Y2)
+
+  If x <> x2 And y <> y2 Then
+    NiceLine = CreateLine(x, y, x2, y2)
+    CurrentTab = windowInfo(FrontWindow(), WIN_INFO_TABLE)
+    INSERT INTO CurrentTab (obj) VALUES (NiceLine)
+  End If
+
+End Sub
+
