@@ -10,11 +10,9 @@ Requirements
 These programs have been written in MapBasic 10.5. They *may* work on some older versions but I have no way of testing this. They definitely *don't* compile on v6.5 or earlier. Please let me know if you have tried/succeeded/failed to compile them on an earlier version.
 
 
-Contents
-========
-
 JakesToolbar
-------------
+============
+
 * Batch export plans - export one plan per record in table with just a few clicks.
 
 ![Screenshot](http://deviouschimp.co.uk/misc/SitePlanExporterScreenshot.png "Screenshot")
@@ -26,18 +24,23 @@ JakesToolbar
 
 
 JakesCircleTool (beta)
-----------------------
+======================
 * Draw a circle of a given area/radius/circumference
-This works but has bugs. It seems to work fine *except* on the workspace I use to test programs., and I don't know why.
+
+**Note:** This works but has bugs. It seems to work fine *except* on the workspace I use to test my programs, and I don't know why!
+
+JakesLineTool (beta)
+====================
+* A simple line tool. Basically a duplicate of the 
 
 
 JakesViewApp
-------------
-* Save window locations and zooms for quicker navigation. Similar to NamedViews that comes with MapInfo but saves views to a table rather than per-installation.
+============
+* Save window locations and zooms for quicker navigation. Similar to NamedViews that comes with MapInfo but saves views to a table to be used per-workspace rather than per-installation.
 
 
 WindowTool
-----------
+==========
 * Create basic A4/A3 landscape/portrait layout windows from other windows.
 * Rename windows
 * Duplicate windows
