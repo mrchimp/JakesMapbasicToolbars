@@ -1,4 +1,6 @@
 *.mbx
 *.png
-/Screenshots
+/screenshots/*
+/compiled/*
 *.swp
+*Thumbs.db

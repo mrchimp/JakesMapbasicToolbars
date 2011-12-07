@@ -21,8 +21,8 @@ Define INPUT_CIRCUMFERENCE 2
 Define INPUT_RADIUS 3
 
 Sub Main
-  Set Distance Units "m"
-  Set CoordSys Window FrontWindow()
+  'Set Distance Units "m"
+  'Set CoordSys Window FrontWindow()
 
   InputTypes(1) = "Area"
   InputTypes(2) = "Circumference"
