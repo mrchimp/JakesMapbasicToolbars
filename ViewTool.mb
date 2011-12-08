@@ -1,44 +1,18 @@
-'********************************************************
-'*      Jake's Amazing View Remembererer                *
-'*      Made by and copyright Jacob Gully 2009-2011     *
-'*      Free to use/distribute/alter                    *
-'********************************************************
+'****************************************************************
+'* Jake's Amazing Toolbar - View Tool Module                    *
+'* 2009-2011 All Rights Reserved                                *
+'* Source available at github.com/mrchimp/JakesMapbasicToolbars *
+'****************************************************************
 
 Include "icons.def"
 Include "mapbasic.def"
+Include "globals.def"
 
 Dim mapwindow as String
 Dim TableFolder as String
 
 Declare Sub Main
-Declare Sub addView
-Declare Sub showView
-Declare Sub ShowTable
-Declare Sub About
 Declare Function createTable As Logical
-Declare Function IsTableOpen(Byval TName as string) as logical
-
-
-Sub Main                                                            'Blockstart
-  Create Menu "&Views" As
-    "&Save view" Calling addView,
-    "&Go to view" Calling showView,
-    "(-",
-    "Show &Table" Calling ShowTable,
-    "(-",
-    "&About Views..." Calling about
-  Alter Menu Bar Add "Views"
-End Sub                                                             'Blockend
-
-Sub About                                                           'Blockstart
-  Note "This program was made by Jacob Gully 2011." & 
-      Chr$(10) & Chr$(10) & 
-       "For further information please visit " & 
-       "deviouschimp.co.uk" & Chr$(10) &
-       "or github.com/mrchimp/JakesMapbasicToolbars"
-End Sub                                                             'Blockend
-
-
 
 Function createTable As Logical                                     'Blockstart
   OnError Goto CreateTableFail
@@ -111,9 +85,7 @@ CreateTableFail:
   Exit Function
 End Function                                                        'Blockend
 
-
-
-Sub ShowTable                                                       'Blockstart
+Sub ShowViewTable                                                   'Blockstart
   Dim tableexists as logical
 
   If IsTableOpen("ViewTable") = false Then
@@ -127,8 +99,6 @@ Sub ShowTable                                                       'Blockstart
   
   Browse * From ViewTable
 End Sub                                                             'Blockend
-
-
 
 Sub addView                                                         'Blockstart
   OnError Goto FailedToAdd
@@ -230,8 +200,6 @@ FailedToAdd:
     Exit Sub
 End Sub                                                             'Blockend
 
-
-
 Sub showView                                                        'Blockstart
   OnError Goto FailPlace
 
@@ -295,24 +263,3 @@ Sub showView                                                        'Blockstart
 FailPlace:
   Exit Sub
 End Sub                                                             'Blockend
-
-
-
-Function IsTableOpen(Byval TName as string) as logical              'Blockstart
-  ' By Yuriy - See http://chimpy.wordpress.com/2009/10/28/mapinfo-viewport-tool/
-  Dim i As Integer
-  Dim result As Logical
-
-  OnError Goto Err_trap
-  Result = FALSE
-  i = TableInfo(TName,TAB_INFO_NCOLS)
-  Result = TRUE
-
-exit_func:
-  IsTableOpen = Result
-  Exit Function
-
-Err_trap:
-  Resume exit_func
-
-End Function                                                        'Blockend

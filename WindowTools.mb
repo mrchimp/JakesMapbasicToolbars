@@ -1,88 +1,174 @@
-'************************************************
-'*      Jake's Amazing Projection Tool          *
-'*      2011 Bragging rights reserved           *
-'************************************************
+'****************************************************************
+'* Jake's Amazing Toolbar - Window Tools                        *
+'* 2009-2011 All Rights Reserved                                *
+'* Source available at github.com/mrchimp/JakesMapbasicToolbars *
+'****************************************************************
 
 Include "icons.def"
 Include "mapbasic.def"
+Include "globals.def"
 
-Declare Sub Main
-Declare Sub NotReadyYet
-Declare Sub GetTableCoordSys
-Declare Sub GetWindowCoordSys
-Declare Function ChooseTable As String
-Declare Sub GetTableList (TableList() as String)
-Declare Function ChooseWindow As String
-Declare Function ChooseWindowNum As String 
-Declare Sub GetWindowList (WindowList() as String)
-Declare Sub GetWindowInfo
-Declare Function WindowTypeNumToString (TypeNum as Integer) As String
+Declare Sub main
+Declare Sub OpenLayoutWin
+Declare Sub AddFrame
+Declare Sub CloseWindowTool
+Declare Sub ShowToolbar
 
-Sub Main                                                            'Blockstart
-  Create Menu "&Projections" As
-    "View Table's Coord System" Calling GetTableCoordSys,
-    "View Window's Coord System" Calling GetWindowCoordSys,
-    "Change Table's Projection" Calling NotReadyYet,
-    "Get window info" Calling GetWindowInfo
-  Alter Menu Bar Add "Projections"
+Dim LayoutWin As String
+Dim MapWin As Integer
+Dim CurrentWin As String
+
+Sub CloseWindowTool
+    End Program
+End Sub
+
+Sub NewA4LayoutP                                                    'Blockstart
+	MapWin = FrontWindow()
+	Layout
+		Width 125 Units "mm"
+		Height 168 Units "mm"
+	Set CoordSys Layout Units "mm"
+	Create Frame
+		Into Window FrontWindow()
+		( 5, 5 ) ( 205, 292 )
+		Pen MakePen(0, 1, RGB(0,0,0))
+		From Window MapWin
+		FillFrame On
+	Set Layout
+		Window FrontWindow()
+		Zoom 50
 End Sub                                                             'Blockend
 
+Sub NewA3LayoutP                                                    'Blockstart
+	MapWin = FrontWindow()
+	Layout
+		Width 105 Units "mm"
+		Height 148 Units "mm"
+	Set CoordSys Layout Units "mm"
 
-' Main Functions
-Sub NotReadyYet                                                     'Blockstart
-  Note "That's not ready yet."
+	LayoutWin = FrontWindow()
+	Create Frame
+		Into Window LayoutWin
+		( 5, 5 ) ( 292, 415 )
+		Pen MakePen(0, 1, RGB(0,0,0))
+		From Window MapWin
+		FillFrame On
+
+	Set Window LayoutWin
+		Width 105 Units "mm"
+		Height 148 Units "mm"
+		Printer Papersize 8
+		
+	Set Layout
+		Window LayoutWin
+		zoom 25
 End Sub                                                             'Blockend
 
-Sub GetTableCoordSys                                                'Blockstart
-  Dim TableName as String
-  TableName = ChooseTable()
-
-  If TableName <> "" Then ' check user didn't press cancel
-    Dim TheProjection as String
-    TheProjection = TableInfo(TableName, TAB_INFO_COORDSYS_CLAUSE)
+Sub NewA4LayoutL                                                    'Blockstart
+	MapWin = FrontWindow()
     
-    Note "The coordinate system for " + TableName + " is:" +
-          Chr$(10) + CoordSysName$(TheProjection) & Chr$(10) & Chr$(10) & 
-          "Full MapInfo coord string: " & Chr$(10) & TheProjection
-  End If
+	Layout
+		Width 168 Units "mm"
+		Height 125 Units "mm"
+        
+	Set CoordSys Layout Units "mm"
+    
+	Create Frame
+		Into Window FrontWindow()
+		( 5, 5 ) ( 292, 205 )
+		Pen MakePen(0, 1, RGB(0,0,0))
+		From Window MapWin
+		FillFrame On
+        
+	Set Layout
+		Window FrontWindow()
+		Zoom 50
+        
+	Set Window FrontWindow()
+		Printer Orientation Landscape
 End Sub                                                             'Blockend
 
-Sub GetWindowCoordSys                                               'Blockstart
-  Dim WindowNum as integer
-  Dim TheProjection as String
+Sub NewA3LayoutL                                                    'Blockstart
+	MapWin = FrontWindow()
+	Layout
+		Width 148 Units "mm"
+		Height 105 Units "mm"
+	Set CoordSys Layout Units "mm"
+
+	LayoutWin = FrontWindow()
+	Create Frame
+		Into Window LayoutWin
+		( 5, 5 ) ( 415, 292 )
+		Pen MakePen(0, 1, RGB(0,0,0))
+		From Window MapWin
+		FillFrame On
+
+	Set Window LayoutWin
+		Width 148 Units "mm"
+		Height 105 Units "mm"
+		Printer Papersize 8
+
+	Set Layout
+		Window LayoutWin
+		zoom 25
+	
+	Set Window FrontWindow()
+		Printer Orientation Landscape
+End Sub                                                             'Blockend
+
+Sub RotateWin                                                       'Blockstart
+	CurrentWin = FrontWindow()
+	If WindowInfo(CurrentWin, WIN_INFO_TYPE) <> 3 Then
+		Beep
+		Note "Silly rabbit, Rotate Window function's for layout windows!"
+	Else
+		If WindowInfo(CurrentWin, WIN_INFO_PRINTER_ORIENT) = WIN_PRINTER_PORTRAIT Then
+			Set Window CurrentWin
+				Printer
+				Orientation Landscape
+		Else
+			Set Window CurrentWin
+				Printer
+				Orientation Portrait
+		End If
+	End If
+End Sub                                                             'Blockend
+
+Sub DuplicateWin                                                    'Blockstart
+	Dim DupStr As String
+	DupStr = WindowInfo(FrontWindow(), WIN_INFO_CLONEWINDOW)
+	Run Command DupStr
+End Sub                                                             'Blockend
+
+Sub RenameWindow                                                    'Blockstart
+	Dim WinName As String
+    
+    CurrentWin = FrontWindow()
+    WinName = WindowInfo(CurrentWin, WIN_INFO_NAME)
+    
+    Dialog
+        Title "New window name"
+        Control EditText
+            Value WinName
+            Into WinName
+            Width 200
+        Control CancelButton
+        Control OKButton
+    
+    If CommandInfo(CMD_INFO_DLG_OK) Then
+        Set Window CurrentWin
+            Title WinName
+    End If
+End Sub                                                             'Blockend
+
+Sub GetWindowInfo                                                   'Blockstart
+  Dim WindowNum as Integer
   Dim WindowType as Integer
   Dim TheWindowID as integer
   
   WindowNum = FrontWindow()
   WindowType = WindowInfo(WindowNum, WIN_INFO_TYPE)
   TheWindowID = WindowID(WindowNum)
-
-  ' If Mapper window:
-  If WindowType = WIN_MAPPER Then
-    TheProjection = MapperInfo(TheWindowID, MAPPER_INFO_COORDSYS_CLAUSE)
-    'Note WindowInfo(TheWindowID, WIN_INFO_NAME) & " has the projection: " & Chr$(10) & TheProjection
-    Note "The projection is:" +
-          Chr$(10) + CoordSysName$(TheProjection) & Chr$(10) & Chr$(10) & 
-          "Full MapInfo coord string: " & Chr$(10) & TheProjection
-  ElseIf WindowType = WIN_BROWSER Then
-    Dim TableName as String 
-    TableName = WindowInfo(TheWindowId, WIN_INFO_TABLE)
-    TheProjection = TableInfo(TableName, TAB_INFO_COORDSYS_CLAUSE)
-    'Note "The table " & TableName & " has projection: " & Chr$(10) & TheProjection
-    Note "The projection for " + TableName + " is:" +
-          Chr$(10) + CoordSysName$(TheProjection) & Chr$(10) & Chr$(10) & 
-          "Full MapInfo coord string: " & Chr$(10) & TheProjection
-  ElseIf WindowType = WIN_LAYOUT Then
-      
-  Else
-    Note "Can't get the projection for that window."
-  End If
-End Sub                                                             'Blockend
-
-Sub GetWindowInfo                                                   'Blockstart
-  Dim WindowNum as Integer
- 
-  WindowNum = ChooseWindowNum()
   
   If WindowNum = 0 Then
     Exit Sub
@@ -165,7 +251,6 @@ Sub GetWindowInfo                                                   'Blockstart
   'Print "Clone Window Code: " & WindowInfo(WindowNum, WIN_INFO_CLONEWINDOW)    
   
   If WindowInfo(WindowNum, WIN_INFO_TYPE) = WIN_MAPPER Then
-    Dim TheWindowID as integer
     Dim DisplayDMS as Integer
     Dim ClipType as Integer
     Dim DistCalcType as Integer
@@ -234,122 +319,3 @@ Sub GetWindowInfo                                                   'Blockstart
     Print "Total num adornment layers: " & MapperInfo(TheWindowID, MAPPER_INFO_NUM_ADORNMENTS)
   End If
 End Sub                                                             'Blockend
-
-
-' HELPERS
-
-Sub GetTableList (TableList() as String)                            'Blockstart
-  Dim i as integer
-  Dim j as integer
-  i = NumTables()
-  ReDim TableList(i)
-  For j = 1 to i
-    TableList(j) = TableInfo(j, TAB_INFO_NAME)
-  Next
-End Sub                                                             'Blockend
-
-Sub GetWindowList (WindowList() as String)                          'Blockstart
-  Dim i as integer
-  Dim j as integer
-  i = NumWindows()
-  ReDim WindowList(i)
-  For j = 1 to i
-    WindowList(j) = WindowInfo(j, WIN_INFO_NAME)
-  Next
-End Sub                                                             'Blockend
-
-Function ChooseTable As String                                      'Blockstart
-  Dim TableNum As Integer
-  Dim TableArray(1) As String
-  
-  Call GetTableList(TableArray)
-  
-  Dialog
-    Title "Choose table"
-    Control PopupMenu
-      Title From Variable TableArray
-      Into TableNum
-    Control OKButton
-    Control Cancelbutton
-    
-  If CommandInfo(CMD_INFO_DLG_OK) Then
-    ChooseTable = TableInfo(TableNum, TAB_INFO_NAME)
-  End If
-End Function                                                        'Blockend
-
-Function ChooseWindow As String                                     'Blockstart
-  Dim WindowNum As Integer
-  Dim WindowArray(1) As String
-  
-  Call GetWindowList(WindowArray)
-  
-  Dialog
-    Title "Choose a window"
-    Control PopupMenu
-      Title From Variable WindowArray
-      Into WindowNum
-    Control OKButton
-    Control Cancelbutton
-    
-  If CommandInfo(CMD_INFO_DLG_OK) Then
-    ChooseWindow = WindowInfo(WindowNum, WIN_INFO_NAME)
-  End If
-End Function                                                        'Blockend
-
-Function ChooseWindowNum As String                                  'Blockstart
-  Dim WindowNum As Integer
-  Dim WindowArray(1) As String
-  
-  Call GetWindowList(WindowArray)
-  
-  Dialog
-    Title "Choose a window"
-    Control PopupMenu
-      Title From Variable WindowArray
-      Into WindowNum
-    Control OKButton
-    Control Cancelbutton
-      
-  If CommandInfo(CMD_INFO_DLG_OK) Then
-    ChooseWindowNum = WindowNum
-  End If
-End Function                                                        'Blockend
-
-Function WindowTypeNumToString (TypeNum as Integer) As String       'Blockstart
-  Do Case TypeNum
-    Case WIN_MAPPER
-      WindowTypeNumToString = "WIN_MAPPER"
-    Case WIN_BROWSER 
-      WindowTypeNumToString = "WIN_BROWSER"
-    Case WIN_LAYOUT
-      WindowTypeNumToString = "WIN_LAYOUT"
-    Case WIN_GRAPH
-      WindowTypeNumToString = "WIN_GRAPH"
-    Case WIN_BUTTONPAD
-      WindowTypeNumToString = "WIN_BUTTONPAD"
-    Case WIN_TOOLBAR
-      WindowTypeNumToString = "WIN_TOOLBAR"
-    Case WIN_CART_LEGEND
-      WindowTypeNumToString = "WIN_CART_LEGEND"
-    Case WIN_ADORNMENT
-      WindowTypeNumToString = "WIN_ADORNMENT"
-    Case WIN_3DMAP
-      WindowTypeNumToString = "WIN_3DMAP"
-    Case WIN_HELP
-      WindowTypeNumToString = "WIN_HELP"
-    Case WIN_MAPBASIC
-      WindowTypeNumToString = "WIN_MAPBASIC"
-    Case WIN_MESSAGE
-      WindowTypeNumToString = "WIN_MESSAGE"
-    Case WIN_RULER
-      WindowTypeNumToString = "WIN_RULER"
-    Case WIN_INFO
-      WindowTypeNumToString = "WIN_INFO"
-    Case WIN_LEGEND
-      WindowTypeNumToString = "WIN_LEGEND"
-    Case WIN_STATISTICS
-      WindowTypeNumToString = "WIN_STATISTICS"
-    Case WIN_MAPINFO
-      WindowTypeNumToString = "WIN_MAPINFO"
-  End Case
-End Function                                                        'Blockend

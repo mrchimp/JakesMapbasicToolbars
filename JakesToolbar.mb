@@ -1,0 +1,170 @@
+'****************************************************************
+'* Jake's Amazing Toolbar - Main                                *
+'* 2009-2011 All Rights Reserved                                *
+'* Source available at github.com/mrchimp/JakesMapbasicToolbars *
+'****************************************************************
+
+Include "mapbasic.def"
+Include "icons.def"
+Include "globals.def"
+
+Declare Sub Main
+Declare Sub gtfo
+Declare Sub Bufferiser
+Declare Sub JakesToolsHelp
+Declare Sub CreateDir
+
+
+Sub Main                                                            'Blockstart
+  OnError goto MainError
+
+  ' Define some globals
+  AreaUnitsArray(1) = "hectare"
+  AreaUnitsArray(2) = "acre"
+  AreaUnitsArray(3) = "perch"
+  AreaUnitsArray(4) = "rood"
+  AreaUnitsArray(5) = "sq ch"
+  AreaUnitsArray(6) = "sq cm"
+  AreaUnitsArray(7) = "sq ft"
+  AreaUnitsArray(8) = "sq in"
+  AreaUnitsArray(9) = "sq km"
+  AreaUnitsArray(10) = "sq li"
+  AreaUnitsArray(11) = "sq m"
+  AreaUnitsArray(12) = "sq mi"
+  AreaUnitsArray(13) = "sq mm"
+  AreaUnitsArray(14) = "sq rd"
+  AreaUnitsArray(15) = "sq survey ft"
+  AreaUnitsArray(16) = "yd"
+  
+  FileTypeArray(1)  = "PNG"
+  FileTypeArray(2)  = "BMP"
+  FileTypeArray(3)  = "WMF"
+  FileTypeArray(4)  = "JPEG"
+  FileTypeArray(5)  = "JP2"
+  FileTypeArray(6)  = "TIFF"
+  FileTypeArray(7)  = "TIFFCMYK"
+  FileTypeArray(8)  = "TIFFG4"
+  FileTypeArray(9)  = "TIFFLZW"
+  FileTypeArray(10) = "GIF"
+  FileTypeArray(11) = "PSD"
+  FileTypeArray(12) = "EMF"
+  FileTypeArray(13) = "GEOTIFF"
+
+  'Make some default styles
+  PenStyle   = MakePen(6,2,RED)
+  BrushStyle = MakeBrush(01,RED,RED)
+  PointStyle = MakeSymbol(34,RED,18)
+
+  Create Menu "WindowTools" as
+    "Create A4 Landscape Layout from Mapper" 
+      HelpMsg "Creates a new A4 Layout window using the currently selected window."
+      Calling NewA4LayoutL,
+    "Create A4 Portait Layout from Mapper"
+      HelpMsg "Creates a new A4 Layout window using the currently selected window."
+      Calling NewA4LayoutP,
+    "Create A3 Landscape Layout from Mapper"
+      HelpMsg "Creates a new A3 Layout window using the currently selected window."
+      Calling NewA3LayoutL,
+    "Create A3 Portrait Layout from Mapper"
+      HelpMsg "Creates a new A3 Layout window using the currently selected window."
+      Calling NewA3LayoutP,
+    "(-",
+    "Rename Window" 
+      HelpMsg "Changes the title of the current window."
+      Calling RenameWindow,
+    "Duplicate Window" 
+      HelpMsg "Duplicates the currently selected window."
+      Calling DuplicateWin,
+    "Rotate Layout Window (beta)"
+      HelpMsg "Makes a portrait layout window landscape and vice versa. Doesn't affect window content or non-layout windows."
+      Calling RotateWin,
+    "View Window Info"
+      HelpMsg "Returns as much info as possible about the front-most window."
+      Calling GetWindowInfo
+  
+  Create Menu "Export" As
+    "Export Site Plans..."
+      HelpMsg "Exports one image per record for a given layer."
+      Calling ProgressBarExport,
+    "Export MIF DXF SHP..."
+      HelpMsg "Export a MIF, DXF and SHP version of a given table."
+      Calling MifDxfShpExporter
+
+  Create Menu "ViewTool" As
+    "&Save View"
+      HelpMsg "Save the location and zoom setting of the current map window."
+      Calling addView,
+    "&Go To View"
+      HelpMsg "Move the current map window to a location stored with the above save command."
+      Calling showView,
+    "(-",
+    "Show &Table"
+      HelpMsg "View the table in which views are stored."
+      Calling ShowViewTable
+  
+  Create Menu "CoordsysTools" As
+    "View Table Coord System..."
+      HelpMsg "Select a table from a list and view it's coordinate system descriptor."
+      Calling GetTableCoordSys,
+    "View Window Coord System..." 
+      HelpMsg "View the coordinate system descriptor of the selected window."
+      Calling GetWindowCoordSys
+  
+  Create Menu "&Jake's Tools" As
+    "&Coordsys" as "CoordsysTools",
+    "&Export" as "Export",
+    "&Views" as "ViewTool",
+    "&Window" as "WindowTools",
+    "(-",
+    "Show &Unmapped Records..." 
+      HelpMsg "Display all records froma given table which do not have an object attached."
+      Calling ShowUnmapped,
+    "Show &Overlaps..."
+      HelpMsg "Show which records overlap other records from the same table."
+      Calling OverlapDetector,
+    "Update &Areas..."
+      HelpMsg "Update the area column of a table byt calculating the areas of the attached objects."
+      Calling SiteAreaUpdate,
+    "(-",
+    "&Help" 
+      HelpMsg "This is a help message about a help message. Click help to get help. I can't make it any easier."
+      Calling JakesToolsHelp,
+    "&Close"
+      Helpmsg "Close Jake's Toolbar"
+      Calling gtfo
+
+  Alter Menu Bar Add "&Jake's Tools"
+  
+  Alter ButtonPad "Drawing"
+    Add 
+      Separator
+      ToolButton
+        Icon MI_ICON_LINE
+        HelpMsg "Click and drag on a map window to draw a line."
+        Cursor MI_CURSOR_CROSSHAIR
+        DrawMode DM_CUSTOM_LINE
+        Calling LineTool
+      ToolButton
+        Icon MI_ICON_ARROW_19
+        HelpMsg "Click on map to draw circle."
+        Cursor MI_CURSOR_CROSSHAIR
+        DrawMode DM_CUSTOM_POINT
+        Calling CircleTool
+      Show
+  
+  Exit Sub
+	
+MainError:
+    Note "Error: "+ Error$()
+End Sub                                                             'Blockend
+
+Sub gtfo
+  End Program
+End Sub
+
+Sub JakesToolsHelp                                                  'Blockstart
+  Note "Jake's MapBasic Tools" & Chr$(13) & 
+       "by Jake Gully" & Chr$(13)  & Chr$(13) & 
+       "Version " & TOOLBAR_VERSION & Chr$(13)  & Chr$(13) & 
+       "Source code is available at github.com/mrchimp/JakesMapbasicToolbars"
+End Sub                                                             'Blockend

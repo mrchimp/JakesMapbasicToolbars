@@ -1,0 +1,78 @@
+'****************************************************************
+'* Jake's Amazing Toolbar - Globals                             *
+'* 2009-2011 All Rights Reserved                                *
+'* Source available at github.com/mrchimp/JakesMapbasicToolbars *
+'****************************************************************
+
+Define TOOLBAR_VERSION 6.7
+
+Global ToolVersion As String
+Global SitePlanExportFolder As String         ' Destination for exported site plans.
+
+' These arrays are populated in JakesToolbar.mb
+Global AreaUnitsArray(16) as String
+Global FileTypeArray(13) as String
+
+' Defined in helper_functions.mb
+Declare Sub ColumnList(strTableName as string, strColumnList() as string)
+Declare Sub GetFolderDeclare 
+Declare Sub GetTableList (TableList() as String)
+Declare Sub GetFolder
+Declare Sub GetWindowNumList (WindowList() as Integer)
+Declare Sub GetWindowList (WindowList() as String)
+Declare Sub TableSelectHandler
+Declare Function SlashesToUnderscores(ByVal StrValue As String) As String
+Declare Function ChooseWindowNum As String
+Declare Function IsTableOpen(Byval TName as string) as logical
+Declare Function ChooseTable As String
+Declare Function IsObjectRegion(ObjAlias As Object) As Logical
+Declare Function ReplaceCharAtPosition(ByVal StrValue As String, ByVal Position As Integer, ByVal ReplaceWith As String) As String
+Declare Function WindowTypeNumToString (TypeNum as Integer) As String
+Declare Sub GetEditableTable(TableName as String)
+
+' Defined in SitePlanExplorer.mb
+Declare Sub ProgressBarExport 
+Declare Sub SitePlanExport
+Declare Sub SitePlanTableSelectHandler
+
+' Defined in AreaUpdater.mb
+Declare Sub SiteAreaUpdate
+
+' Defined in ShowUnmapped.mb
+Declare Sub ShowUnmapped
+
+' Defined in OverlapDetector.mb
+Declare Sub OverlapDetector
+
+' Defined in MixDxfShpExporter.mb
+Declare Sub MifDxfShpExporter
+
+' Defined in WindowTools.mb
+Declare Sub NewA4LayoutP
+Declare Sub NewA3LayoutP
+Declare Sub NewA4LayoutL
+Declare Sub NewA3LayoutL
+Declare Sub RotateWin
+Declare Sub DuplicateWin
+Declare Sub RenameWindow
+Declare Sub GetWindowInfo
+
+' Defined in ViewApp.mb
+Declare Sub AddView
+Declare Sub ShowView
+Declare Sub ShowViewTable
+
+' Defined in ProjectionTool.mb
+Declare Sub GetTableCoordSys
+Declare Sub GetWindowCoordSys
+
+' Defined in LineTool.mb
+Declare Sub LineTool
+
+' Defined in CircleTool.mb
+Declare Sub CircleTool
+
+' Global styles - used in SitePlanExporter
+Global PenStyle   As Pen
+Global BrushStyle As Brush
+Global PointStyle As Symbol

@@ -1,0 +1,14 @@
+[Link]
+Application=JakesToolbar.mbx
+Module=JakesToolbar.mbo
+Module=helper_functions.mbo
+Module=SitePlanExporter.mbo
+Module=AreaUpdater.mbo
+Module=ShowUnmapped.mbo
+Module=OverlapDetector.mbo
+Module=MifDxfShpExporter.mbo
+Module=WindowTools.mbo
+Module=ViewTool.mbo
+Module=CoordsysTool.mbo
+Module=CircleTool.mbo
+Module=LineTool.mbo

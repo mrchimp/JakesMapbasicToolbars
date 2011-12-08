@@ -1,0 +1,29 @@
+'****************************************************************
+'* Jake's Amazing Toolbar - Line Tool                           *
+'* 2009-2011 All Rights Reserved                                *
+'* Source available at github.com/mrchimp/JakesMapbasicToolbars *
+'****************************************************************
+
+Include "mapbasic.def"
+Include "globals.def"
+
+Sub LineTool
+  Dim x, y, x2, y2 as float
+  Dim NiceLine     as Object
+  Dim CurrentTab   as string
+
+  Set Distance Units "m"
+  Set Coordsys Window FrontWindow() 
+  
+  x = CommandInfo(CMD_INFO_X)
+  y = CommandInfo(CMD_INFO_Y)
+  x2 = CommandInfo(CMD_INFO_X2)
+  y2 = CommandInfo(CMD_INFO_Y2)
+
+  If x <> x2 And y <> y2 Then
+    NiceLine = CreateLine(x, y, x2, y2)
+    CurrentTab = windowInfo(FrontWindow(), WIN_INFO_TABLE)
+    INSERT INTO CurrentTab (obj) VALUES (NiceLine)
+  End If
+End Sub
+

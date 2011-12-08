@@ -1,0 +1,144 @@
+'****************************************************************
+'* Jake's Amazing Toolbar - Mif/Dxf/Shp Exporter Module         *
+'* 2009-2011 All Rights Reserved                                *
+'* Source available at github.com/mrchimp/JakesMapbasicToolbars *
+'****************************************************************
+
+' note this module is messy and relies on IMUT being in the correct place.
+
+Include "mapbasic.def"
+Include "globals.def"
+
+Type SECURITY_ATTRIBUTES
+  nLength as integer                          ' DWORD in Windows
+  lpSecurityDescriptor as integer             ' LPVOID in Windows
+  bInheritHandle as integer                   ' BOOL in Windows
+End type
+
+Declare function CreateDirectory32 lib "Kernel32.dll" alias "CreateDirectoryA"  ' Used by the MIF DXF SHP exporter
+  (byval sPath as string, tSecurity as SECURITY_ATTRIBUTES) as integer
+  
+' Pauses the program for a given amount of time.
+Declare Sub Sleep Lib "kernel32" Alias "Sleep" (ByVal dwMilliseconds As Integer)
+  
+
+Sub MifDxfShpExporter                                               'Blockstart
+  OnError goto whats_wrong
+
+  ' DXF MIF SHP EXPORTER VARS
+  Dim SQLStr As String
+  Dim SearchType As Integer               ' type of search in Site_ref search - "=" or "like"
+  Dim TabFile As String                   ' TAB file to be exported by Dxf Mif Shp Exporter   e.g. "c:\temp\SiteForm.tab
+  Dim OutputFile As String                ' File for output of 
+  Dim TableName As String                 ' name of Tab file     e.g. "SiteForm"
+  Dim RunStr As String                    ' command string to be input into batch files
+  Dim ControlMaker As String              ' url of BAT file for creating ControlFile
+  Dim ControlFile As String               ' url of Control File for exporter
+  Dim SHPMaker As String                  ' url of BAT file for creating SHP
+  Dim dirStatus As Integer                ' status of directory being created - non-zero if folder is created
+  Dim tSecurity as SECURITY_ATTRIBUTES    ' for creating a new directory
+  Dim ExportFolder as String
+  Dim TableNum as Integer
+
+  ' Get table list
+  Dim TableNums(1) As String
+  Call GetTablelist(TableNums)
+
+  ExportFolder = ""
+
+  Dialog
+  Title "Choose table to export as MIF, DXF and SHP"
+  Control StaticText
+    Title "Note: Certain shape types (e.g. multipoints) will cause the export function to abort. I'm working on this..."
+    Position 10, 10
+  Control StaticText
+    Title "Also please note that this will overwrite any files that it needs to. Choose your folder wisely."
+    Position 10, 30
+  Control PopupMenu
+    Title From Variable TableNums
+    Into TableNum
+    Position 10, 50
+  Control Button
+    Title "Output folder"
+    Calling GetFolder
+    Position 120, 49
+  Control OKButton
+  Control Cancelbutton
+
+
+  If CommandInfo(CMD_INFO_DLG_OK) Then
+    If ExportFolder = "" Then
+      Note "Please choose an output folder. (The dialog will now close. Sorry about that.)"
+      Exit Sub
+    End If
+
+    TableName = TableInfo(TableNum, TAB_INFO_NAME)
+
+    tSecurity.nLength = 24
+    DirStatus = CreateDirectory32(ExportFolder + "\Converted", tSecurity)
+    DirStatus = CreateDirectory32(ExportFolder + "\Converted\MIF", tSecurity)
+    DirStatus = CreateDirectory32(ExportFolder + "\Converted\DXF", tSecurity)
+    DirStatus = CreateDirectory32(ExportFolder + "\Converted\SHP", tSecurity)
+    ExportFolder = ExportFolder + "\Converted\"
+
+    Print "Exporting..."
+
+    Export TableName
+      Into ExportFolder + "MIF\" + TableName + ".mif"
+      Type "MIF"
+      Overwrite
+    Print "MIF exported."
+
+    Export TableName
+      Into ExportFolder + "DXF\" + TableName + ".dxf"
+      Type "DXF"
+      Overwrite
+    Print "DXF Exported"
+
+    ControlFile = ExportFolder + "ControlFile.fme"
+    ControlMaker = ExportFolder + "ControlMaker.bat"
+
+    If Not FileExists(ControlFile) Then   'If control file doesn't exist then make a new one
+      RunStr = "C:\Progra~1\MapInfo\Professional\UT\IMUT.exe CFGenerate MAPINFO SHAPE """ + TabFile + """ """ + ControlFile + """ LOG_STANDARDOUT ""YES"""
+      Open File ControlMaker
+        For Output
+        Access Write
+        As #1
+      Print #1, RunStr
+      Close File #1
+      Run Program ControlMaker
+      Print "Waiting for FME file to be made..."
+      While Not FileExists(ControlFile) ' wait until fme file is made before carrying on...
+        Call Sleep(2000)                'pause for 2secs, otherwise it'll spaz out trying to repeatedly check for the file...
+      Wend
+    End If
+
+    RunStr = "C:\Progra~1\MapInfo\Professional\UT\IMUT.exe """ + ControlFile + """ --HOMOGENOUS_GEOMETRY ""YES"" --_SHAPE_FILE_TYPE ""2d"" --SourceDataset """ + TabFile + """ --DestDataset """ + ExportFolder + """ --_EXTENSION ""TAB"" --_BASENAME Converted\SHP --_FULLBASENAME """"Converted\SHP"
+    SHPMaker = ExportFolder + "SHPMaker.bat"
+    Open File SHPMaker
+      For Output
+      Access Write
+      As #2
+    Print #2, RunStr
+    Close File #2
+    While Not FileExists(ShpMaker) ' wait until file created - see above
+      Call Sleep(2000)
+    Wend
+    Run Program SHPMaker
+    Print "SHP Exported."
+    Print "All done (hopefully) :D" & Chr$(10) & "Note: You can delete the .bat and .fme files from the 'Converted' folder."
+    Note "All done (hopefully) :D" & Chr$(10) & "Note: You can delete the .bat and .fme files from the 'Converted' folder."
+  End If
+
+  Exit Sub
+
+whats_wrong:
+  Note "Whoops. MifDxfShp Exporter Error: " & Error$() & Chr$(13) & 
+        "Export process has been aborted. " & Chr$(13) & 
+        "It wasn't supposed to do that." & Chr$(13) & 
+        "Please report this error so that it can be fixed."
+
+End Sub                                                             'Blockend
+
+
+

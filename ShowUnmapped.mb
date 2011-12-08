@@ -1,0 +1,32 @@
+'*********************************
+'* Jake's Unmapped Record Viewer *
+'* 2009-2011 All Rights Reserved *
+'*********************************
+
+Include "mapbasic.def"
+Include "globals.def"
+
+Sub ShowUnmapped                                                    'Blockstart
+  OnError goto UnmappedError
+
+  Dim ResultsTable as String
+  Dim TableName as String
+  Dim TableNum as Integer
+
+  TableName = ChooseTable()
+
+  If CommandInfo(CMD_INFO_DLG_OK) Then
+    If IsTableOpen(TableName) Then
+      ResultsTable = TableName & "_Unmapped"
+      Select * from TableName Into ResultsTable Where Not Obj
+      Browse * from ResultsTable
+    Else
+      Note "Error: " + TableName + " isn't open. How did you do that?!"
+    End If
+  End If
+      
+  Exit Sub
+	
+UnmappedError:
+  Note "Error: " + Error$()
+End Sub                                                             'Blockend

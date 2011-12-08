@@ -1,0 +1,66 @@
+'****************************************************************
+'* Jake's Amazing Toolbar - Coordsys Module                     *
+'* 2009-2011 All Rights Reserved                                *
+'* Source available at github.com/mrchimp/JakesMapbasicToolbars *
+'****************************************************************
+
+Include "icons.def"
+Include "mapbasic.def"
+Include "globals.def"
+
+Sub GetTableCoordSys                                                'Blockstart
+  Dim TableName as String
+  TableName = ChooseTable()
+
+  If TableName = "" Then ' check user didn't press cancel
+    Exit Sub
+  End If
+  
+  Dim TheProjection as String
+  TheProjection = TableInfo(TableName, TAB_INFO_COORDSYS_CLAUSE)
+  
+  Note "The coordinate system for " + TableName + " is:" +
+        Chr$(10) + CoordSysName$(TheProjection) & Chr$(10) & Chr$(10) & 
+        "Full MapInfo coord string: " & Chr$(10) & TheProjection
+End Sub                                                             'Blockend
+
+Sub GetWindowCoordSys                                               'Blockstart
+  OnError Goto TheMoon
+  
+  Dim TheProjection as String
+  Dim WindowType as Integer
+  Dim WindowNum as Integer
+  Dim TheWindowID as integer
+  
+  WindowNum = FrontWindow()
+  WindowType = WindowInfo(WindowNum, WIN_INFO_TYPE)
+  TheWindowID = WindowID(WindowNum)
+  
+  If WindowNum = 0 Then
+    Exit Sub
+  End If
+  
+  WindowType = WindowInfo(WindowNum, WIN_INFO_TYPE)
+  TheWindowID = WindowID(WindowNum)
+
+  If WindowType = WIN_MAPPER Then
+    TheProjection = MapperInfo(TheWindowID, MAPPER_INFO_COORDSYS_CLAUSE)
+    Note "The projection is:" +
+          Chr$(10) + CoordSysName$(TheProjection) & Chr$(10) & Chr$(10) & 
+          "Full MapInfo coord string: " & Chr$(10) & TheProjection
+  ElseIf WindowType = WIN_BROWSER Then
+    Dim TableName as String 
+    TableName = WindowInfo(TheWindowId, WIN_INFO_TABLE)
+    TheProjection = TableInfo(TableName, TAB_INFO_COORDSYS_CLAUSE)
+    Note "The projection for " + TableName + " is:" +
+          Chr$(10) + CoordSysName$(TheProjection) & Chr$(10) & Chr$(10) & 
+          "Full MapInfo coord string: " & Chr$(10) & TheProjection
+  ElseIf WindowType = WIN_LAYOUT Then
+      
+  Else
+    Note "Can't get the projection for that window."
+  End If
+  
+TheMoon:
+  Note "Error: "+ Error$()
+End Sub                                                             'Blockend

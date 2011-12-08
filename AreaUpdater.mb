@@ -1,0 +1,71 @@
+'*********************************
+'* Jake's Area Updater           *
+'* 2009-2011 All Rights Reserved *
+'*********************************
+
+Include "mapbasic.def"
+Include "globals.def"
+
+Sub SiteAreaUpdate                                                  'Blockstart
+  OnError goto AreaError
+  
+  Dim SiteAreaNum, TableNum   as Integer
+  Dim TableName, AreaUnits    as String
+  Dim SiteAreaCol             as Alias
+  Dim ColumnListVar(10)       as String
+  
+  Dim TableNums(1) As String
+
+  Call GetTableList(TableNums)
+  Call ColumnList(TableNums(1),ColumnListVar)
+
+  Dialog
+  Title "Update Area Column"
+  Control StaticText
+    Title "This tool updates the area column of a table."
+  Control StaticText
+    Title "Table"
+    Position 10, 24
+  Control PopupMenu
+    Title From Variable TableNums
+    Position 40, 20
+    ID 51
+    Calling TableSelectHandler
+    Into TableNum
+  Control StaticText
+    Title "Column"
+    Position 10, 44
+  Control PopupMenu
+    Title From Variable ColumnListVar
+    Into SiteAreaNum
+    Position 40, 40
+    ID 52
+    Width 80
+  Control StaticText
+    Title "Units"
+    Position 10, 64
+  Control PopupMenu
+    Title From Variable AreaUnitsArray
+    Into AreaUnits
+    Position 40, 60
+  Control OKButton
+  Control Cancelbutton
+
+  If CommandInfo(CMD_INFO_DLG_OK) Then
+    TableName = TableInfo(TableNum, TAB_INFO_NAME)
+    If IsTableOpen(TableName) Then
+      SiteAreaCol = ColumnInfo(TableName, "COL"&SiteAreaNum, COL_INFO_NAME)
+      Select * From TableName Where Obj Into AreaTable Noselect
+      Update AreaTable
+        Set SiteAreaCol = Area(obj, AreaUnitsArray(AreaUnits))
+      Close Table AreaTable
+    Else
+      Note "The table " + TableName + " isn't open. What have you done?!"
+    End If
+  End If
+  
+  Exit Sub
+
+AreaError:
+    Note "Error: " + Error$()
+End Sub                                                             'Blockend

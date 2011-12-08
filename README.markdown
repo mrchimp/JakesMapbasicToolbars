@@ -14,9 +14,9 @@ Toolbar
 ============
 
 * Batch export plans - export one plan per record in table with just a few clicks. 
-** Choose output size and resolution. 
-** Override the layer styles
-** 13 different output file formats, including PNG, BMP, WMF, JPEG, TIFF, PSD, EMF etc.
+    * Choose output size and resolution. 
+    * Override the layer styles
+    * 13 different output file formats, including PNG, BMP, WMF, JPEG, TIFF, PSD, EMF etc.
 
 ![Screenshot](http://deviouschimp.co.uk/misc/mapbasicscreenshots/SitePlanExporterScreenshot.png "Screenshot")
 

@@ -1,0 +1,153 @@
+'****************************************************************
+'* Jake's Amazing Toolbar - Overlap Detector                    *
+'* 2009-2011 All Rights Reserved                                *
+'* Source available at github.com/mrchimp/JakesMapbasicToolbars *
+'****************************************************************
+
+Include "mapbasic.def"
+Include "globals.def"
+
+Sub OverlapDetector                                                 'Blockstart
+  OnError goto NoOverlaps
+      
+  Dim RowCount                As Integer   'Total number of rows
+  Dim TempObj1                As Object    'Object variable 1
+  Dim TempObj2                As Object    'Object variable 2
+  Dim OverlapArea             As Float     'Area of the found overlap
+  Dim x                       As Integer   'used for counting...
+  Dim y                       As Integer   'used for counting...
+  Dim ObjectAlias             As Alias     'Alias for the Obj column
+  Dim SiteRef1                As String    'Site_ref var 1
+  Dim SiteRef2                As String    'Site_ref var 2
+  Dim OverlapThreshold        As Float     'Any overlaps of area smaller than this will be ignored
+  Dim AreaUnitsNum            As integer
+  Dim ResultsURL              As String
+  Dim ResultsTableName        As String
+  Dim TableNameIncrementor    As Integer
+  Dim ColumnListVar(10)       As String
+  Dim SiteRefColNum           As Integer
+  Dim SiteRefColName          As String
+  Dim TableNum                As Integer
+  Dim TableName               As String
+  Dim ResultsBasename         As String
+  Dim SiteRefAlias            As Alias
+  
+  Dim TableNums(1) As String
+  Call GetTableList(TableNums)
+  Call ColumnList(TableNums(1),ColumnListVar)
+
+  ' Choose table
+  Dialog
+  Title "Choose table"
+  
+  ' Table
+  Control StaticText
+    Title "Table to analyse"
+    Position 10, 10
+    Width 90
+  Control PopupMenu
+    Title From Variable TableNums
+    Into TableNum
+    Position 10, 20
+    Calling TableSelectHandler
+    Id 51
+    Width 90
+      
+  'Site ref col
+  Control StaticText
+    Title "Site name column"
+    Position 10, 45
+    Width 90
+  Control PopupMenu
+    Title From variable ColumnListVar
+    Into SiteRefColNum
+    Id 52
+    Width 90
+    Position 10, 55
+
+  ' Threshold
+  Control StaticText
+    Title "Overlaps smaller than this will be ignored:"
+    Position 10, 80
+    Width 70
+    Height 16
+  Control EditText
+    Into OverlapThreshold
+    Value 0
+    Position 10, 100
+    Width 30
+  Control PopupMenu
+    Title From Variable AreaUnitsArray
+    Into AreaUnitsNum
+      
+  Control OKButton
+    Position 10, 120
+  Control Cancelbutton
+    Position 50, 120
+
+  If CommandInfo(CMD_INFO_DLG_OK) Then
+    TableName = TableInfo(TableNum, TAB_INFO_NAME)
+    Set Area Units AreaUnitsArray(AreaUnitsNum)
+    Select * from TableName Into OverlapTable Where Obj NoSelect
+    RowCount = TableInfo(OverlapTable, TAB_INFO_NROWS)
+    ResultsURL = TempFileName$("")
+
+    'Set up column aliases
+    SiteRefColName = ColumnInfo(TableName, "COL"&SiteRefColNum, COL_INFO_NAME)
+    SiteRefAlias = OverlapTable & "." & SiteRefColName
+    ObjectAlias = OverlapTable & "." & Obj
+    
+    ' Check table name
+    ResultsBasename = "Overlaps_" + TableName
+    ResultsTableName = ResultsBasename
+    TableNameIncrementor = 1
+    Do While IsTableOpen(ResultsTableName) = True
+      TableNameIncrementor = TableNameIncrementor + 1
+      ResultsTableName = ResultsBasename & TableNameIncrementor
+    Loop
+
+    Create Table ResultsTableName
+      (   SiteOne Char(30),
+          SiteTwo Char(30),
+          overlapAmount Char(30)  )
+      File ResultsURL
+
+    For x = 1 To (RowCount - 1) Step 1
+      For y = (x+1) To RowCount Step 1
+        Fetch Rec x From OverlapTable
+        SiteRef1 = SiteRefAlias
+        TempObj1 = ObjectAlias
+
+        Fetch Rec y From OverlapTable
+        SiteRef2 = SiteRefAlias
+        TempObj2 = ObjectAlias
+
+        If IsObjectRegion(TempObj1) And IsObjectRegion(TempObj2) Then
+          OverlapArea = AreaOverlap(TempObj1, TempObj2)
+          If OverlapArea > OverlapThreshold Then
+            Insert Into ResultsTableName
+              (SiteOne, SiteTwo, overlapAmount)
+            Values
+              (SiteRef1, SiteRef2, OverlapArea + " Ha")
+          End If
+        Else
+          If TempObj1 Within TempObj2 Or TempObj2 Within TempObj1 Then
+            Insert Into ResultsTableName
+              (SiteOne, SiteTwo, overlapAmount)
+            Values
+              (SiteRef1, SiteRef2, "(Area unknown)")
+          End If
+        End If
+      Next
+    Next
+
+    Browse * From ResultsTableName
+    Close Table OverlapTable
+  End If
+
+  Exit Sub
+
+NoOverlaps:
+    Close Table OverlapTable
+    Note "Error: " + Error$()
+End Sub                                                             'Blockend

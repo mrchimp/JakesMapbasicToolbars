@@ -1,0 +1,492 @@
+'****************************************************************
+'* Jake's Amazing Toolbar - Site Plan Exporter Module           *
+'* 2009-2011 All Rights Reserved                                *
+'* Source available at github.com/mrchimp/JakesMapbasicToolbars *
+'****************************************************************
+
+Include "mapbasic.def"
+Include "globals.def"
+
+Global StyleOverride as Logical
+Global CurrentRow As Integer       ' row being processed
+Global LabelSiteplans as Logical
+Dim SelectedTable As String        ' Table to be used (i.e. SiteForm)
+Dim MapWinID As Integer            ' Number of the main map window.
+Dim MapWindowName As String        ' Name of the main map window.
+Dim LayoutWindowNum As String      ' WindowID of the layout window that is being exported.
+Dim ObjColAlias As Alias           ' i.e. SiteForm.obj
+Dim SiteRefAlias As Alias          ' i.e. SiteForm.Site_ref
+Dim SiteLabelAlias As Alias        ' i.e. SiteForm.Site_name
+Dim SkippedSum As Integer          ' counts how many couldn't be exported (i.e. had no obj)
+Dim SiteRef As String              ' name of "Site_ref" column
+Dim SiteLabelCol	as String      ' column to use when label site plans
+Dim SiteLabel	as String          ' column to use when label site plans
+Dim NumOfRows As Integer           ' number of rows in selected table
+Dim TextObjRowId as Integer
+Dim sLayoutTable as String
+
+' Styles and settings for exported plans
+Dim ExportResolution As Integer ' default=150
+Dim ExportPaperSize As Integer
+Dim FileType As Integer                         ' Chosen file type as index of FileTypeArray
+Dim FileTypeStr As String                       ' File type as string - for use with Save Window command
+'Dim FileTypeArray(13) as String
+
+' Main siteplan function. This calls SitePlanExport 
+' repeatedly and controls the progress bar.
+'Declare Sub ProgressBarExport
+'Declare Sub SitePlanExport
+Declare Sub SiteLabelToggler
+Declare Sub ShowExporterHelp
+Declare Function GetLayoutTableRowId (TextValue as String, slayoutTable as String) as Integer
+Declare Sub UpdateLayoutText(sNewText as String, slayoutTable as String, iRowId as Integer)
+
+' Get system time to the millisecond
+Declare Function GetTickCount Lib "kernel32.dll" () As Integer 
+
+Sub SitePlanTableSelectHandler                                      'Blockstart
+  Dim ColumnListVar(10) as String
+  Dim strTable as string
+
+  strTable = TableInfo(readcontrolvalue(51), TAB_INFO_NAME)
+
+  Call ColumnList(strTable,ColumnListVar)
+
+  Alter Control 52 Title from Variable ColumnListVar
+  Alter Control 53 Title from Variable ColumnListVar
+End Sub                                                             'Blockend
+
+Sub SiteLabelToggler                                                'Blockstart
+  If readcontrolvalue(54) <> 0 Then
+    Alter Control 53 Enable
+  Else 
+    Alter Control 53 Disable
+  End If
+End Sub                                                             'Blockend
+
+Sub ProgressBarExport                                               'Blockstart
+  OnError goto site_plan_issues
+
+  Dim TimerStart          as Integer
+  Dim TimerEnd            as Integer
+
+  Dim sMarker             as String
+  Dim SiteRefNum          as Integer
+  Dim SiteLabelNum        as Integer
+  Dim TableName           as String
+
+  Dim WindowWidth         as Integer
+  Dim WindowHeight        as Integer
+
+  Dim ColumnListVar(10)   as String
+  Dim TableNum            as Integer
+  'Dim TableNums(1)        As String
+
+  ' Dim SiteLabelToggler    as Logical
+  
+  Dim i as integer
+  Dim j as integer
+
+  Dim TableNums(1) as String
+  Call GetTableList(TableNums)
+
+  Dim WindowNums(1) as String
+  Call GetWindowList(WindowNums)
+
+  Call ColumnList(TableNums(1),ColumnListVar)
+    
+  Dialog
+  Title "Site Plan Exporter"
+
+  Control GroupBox
+    Title "What to export"
+    Width 120 Height 100
+    Position 5, 10
+  Control StaticText
+    Title "Choose map window:"
+    Position 10, 20
+    Width 110
+  Control Popupmenu
+    Title From Variable WindowNums
+    Into MapWindowName
+    Value MapWindowName
+    Width 110
+    Position 10,30
+  Control StaticText
+    Title "Choose SiteForm Layer:"
+    Position 10, 50
+    Width 110
+  Control PopupMenu
+    Title From Variable TableNums
+    Into TableNum
+    Value TableNum
+    Width 110
+    Position 10, 60
+    Id 51
+    Calling SitePlanTableSelectHandler
+  Control StaticText
+    Title "Site ref column"
+    Position 10, 80
+    Width 110
+  Control PopupMenu
+    Title From Variable ColumnListVar
+    Into SiteRefNum
+    Id 52
+    Position 10, 90
+    Width 110
+
+  Control GroupBox
+    Title "Format"
+    Width 120 Height 135
+    Position 130, 10
+  Control StaticText
+    Title "Destination Folder:"
+    Position 140, 20
+    Width 80
+  Control Button
+    Title "Browse"
+    Calling GetFolder
+    Position 140, 30
+  Control StaticText
+    Title "File Type:"
+    Position 140, 50
+    Width 80
+  Control PopupMenu
+    Title From Variable FileTypeArray
+    Value 1
+    Into FileType
+    Position 140, 60
+  Control StaticText
+    Title "Resolution:"
+    Position 140, 80
+    Width 80
+  Control EditText
+    Into ExportResolution
+    Width 25
+    Value 150
+    Position 140, 90
+  Control StaticText
+    Title "Paper Size"
+    Position 140, 110
+    Width 80
+  Control PopupMenu
+    Title "A4 Portrait;A4 Landscape;A3 Portrait;A3 Landscape"
+    Value 1
+    Into ExportPaperSize
+    Position 140, 120
+
+  Control GroupBox
+    Title "Label"
+    Width 120 Height 50
+    Position 5, 115
+  Control Checkbox
+    Title "Include label"
+    Into LabelSiteplans
+    Calling SiteLabelToggler
+    Id 54
+  Control PopupMenu
+    Title From Variable ColumnListVar
+    Into SiteLabelNum
+    Id 53
+    Width 110
+    Position 10, 140
+                  
+  Control GroupBox
+    Title "Style"
+    Width 120 Height 50
+    Position 130, 150
+  Control CheckBox
+    Title "Override Style"
+    Into StyleOverride
+    Value True
+  Control PenPicker
+    Position 140, 175
+    Into PenStyle
+    Value PenStyle
+  Control BrushPicker
+    Position 170, 175
+    Into BrushStyle
+    Value BrushStyle
+  Control SymbolPicker
+    Position 200, 175
+    Into PointStyle
+    Value PointStyle
+      
+  Control Button
+    Title "Help!"
+    Calling ShowExporterHelp
+  Control OKButton
+  Control CancelButton
+
+  If CommandInfo(CMD_INFO_DLG_OK) Then
+    TableName = TableInfo(TableNum, TAB_INFO_NAME)
+    SiteRef =  ColumnInfo(TableName, "COL" & SiteRefNum, COL_INFO_NAME)
+    SiteLabelCol =  ColumnInfo(TableName, "COL" & SiteLabelNum, COL_INFO_NAME)
+    SelectedTable = TableInfo(TableNum, TAB_INFO_NAME)
+
+    FileTypeStr = FileTypeArray(FileType)
+
+    Print "Paper size: " & ExportPaperSize
+    
+    ' Create layout Window
+    Do Case ExportPaperSize
+      Case 1 ' A4 landscape
+        WindowWidth  = 210
+        WindowHeight = 297
+      Case 2 ' A4 landscape
+        WindowWidth  = 297
+        WindowHeight = 210
+      Case 3 ' A3 Portrait
+        WindowWidth  = 297
+        WindowHeight = 420
+      Case 4 ' A3 Landscape
+        WindowWidth  = 420
+        WindowHeight = 297
+      Case Else 
+        Note "What kind of paper was that?!"
+        Exit Sub
+    End Case
+    
+    print "Width: " & WindowWidth
+    print "Height: " & WindowHeight
+    
+    Layout
+      Width  WindowWidth  Units "mm"
+      Height WindowHeight Units "mm"
+      Max
+    Set CoordSys Layout Units "mm"
+
+    LayoutWindowNum = FrontWindow()
+
+    Create Frame
+      Into Window LayoutWindowNum
+      ( 0, 1 ) ( WindowWidth, WindowHeight )
+      Pen MakePen(0, 1, RGB(0,0,0))
+      Brush MakeBrush(01, RGB(0,0,0), RGB(0,0,0))
+      From Window WindowID(MapWindowName)
+      FillFrame On
+
+
+    ' == Add SiteRef label to layout window
+    Print "labelSiteplans = " & LabelSiteplans
+    Print "labelsiteplans=true: " & (LabelSiteplans <> 0)
+    If LabelSiteplans <> 0 Then
+      sMarker = "[REFNUM]"
+      Create Text
+        Into Window WindowID(LayoutWindowNum)
+        sMarker
+        (0.5,0.5) (4,1)
+        Font MakeFont("Arial", 1, 12, black, white)
+      sLayoutTable = WindowInfo(LayoutWindowNum, WIN_INFO_TABLE)
+      TextObjRowId = GetLayoutTableRowId(sMarker, sLayoutTable)
+    End If
+    ' =====================
+
+    MapWinID = WindowID(MapWindowName)
+    
+    Select * From SelectedTable Where Obj Into ObsOnlyTable
+    
+    ' make a table to store each object - one at a time
+    Create Table SiteFormTemp(SiteRef char(16))
+    
+    ' Make table mappable - add obj column
+    Create Map
+      For SiteFormTemp
+      Using SelectedTable
+    Add Map
+      Window MapWinID
+      Layer SiteFormTemp
+
+    Fetch First From ObsOnlyTable
+
+    NumOfRows = TableInfo(ObsOnlyTable, TAB_INFO_NROWS)
+
+    SkippedSum = 0
+    CurrentRow = 1
+
+    Print Chr$(13)&Chr$(13)&"--------------------------------------"&Chr$(13)
+    TimerStart = GetTickCount()
+    
+    If NumOfRows = 0 Then
+      Note "No objects found in table. Do you expect me to just make it up or something?"
+      Exit Sub
+    End If
+    
+    Print "Found " & NumOfRows & " records with objects attached. Exporting plans..."
+    
+    ProgressBar "Exporting Site Plans..."
+      Calling SitePlanExport
+      Range NumOfRows
+
+    Drop Table ObsOnlyTable
+    Drop Table SiteFormTemp
+    Close Window LayoutWindowNum
+
+    TimerEnd = GetTickCount()
+    print "(That took " & (TimerEnd - TimerStart) & "ms)"
+    Beep
+    If SkippedSum > 0 Then
+      Note "Export Completed. " & SkippedSum & " Skipped. See message window for more info :)"
+    Else
+      Note "All Done :D"
+    End If
+  End If
+
+Exit Sub
+site_plan_issues:
+  note "There was a problem: " & Error$()
+End Sub                                                             'Blockend
+
+Sub SitePlanExport                                                  'Blockstart
+  OnError goto ExporterError
+      
+  Dim TempObj     As Object
+  Dim xCoord      As Float
+  Dim yCoord      As Float
+  Dim MapZoom     As Float
+  Dim SiteRefNum  As String
+  
+  ObjColAlias = ObsOnlyTable & ".Obj"
+  SiteRefAlias = ObsOnlyTable & "." & SiteRef
+  SiteLabelAlias = ObsOnlyTable & "." & SiteLabelCol
+  
+  TempObj = ObjColAlias
+
+  Insert Into SiteFormTemp (Obj) Values (TempObj)
+  
+  If StyleOverride <> 0 Then
+    Set Map Layer SiteFormTemp
+        Global Pen PenStyle
+        Global Line PenStyle
+        Global Brush BrushStyle
+        Global Symbol PointStyle
+        Display Global
+  Else 
+    Set Map Layer SiteFormTemp
+        Display Graphic
+  End If
+
+  ' Center on site
+  Set Map Zoom 100 Units "cm"
+  xCoord = CentroidX(ObjColAlias)
+  yCoord = CentroidY(ObjColAlias)
+  Set Map Center (xCoord, yCoord)
+
+  ' Center on / zoom to site
+  Set Map Redraw Off
+  Set Map Layer SelectedTable Display Off
+  Set Map Redraw On
+  Set Map Zoom entire Layer SiteFormTemp
+
+  ' Correct zoom level
+  MapZoom = MapperInfo(MapWinID, MAPPER_INFO_ZOOM)
+  MapZoom = MapZoom * 2
+  If MapZoom < 0.01 Then
+      MapZoom = 0.2
+  End If
+      
+  Set Map
+    Window MapWinID
+    Zoom MapZoom
+    
+    If LabelSiteplans <> 0 Then
+      SiteLabel = SiteLabelAlias
+      Call UpdateLayoutText(SiteLabel, slayoutTable, TextObjRowId)
+    End If
+	
+  Save Window WindowID(LayoutWindowNum)
+    As SitePlanExportFolder + "\" & SlashesToUnderscores(SiteRefAlias) & "." & FileTypeStr
+    Type FileTypeStr
+    Width  210 Units "mm"
+    Height 297 Units "mm"
+    Resolution ExportResolution
+
+  ' remove temp object
+  Delete From SiteFormTemp
+  
+  ' These 2 lines are needed to stop the map view from zooming further
+  ' and further out. Without them it zooms to show all previous sites, 
+  ' not just the current site...I'm not sure why - it shoudln't do as 
+  ' the previous sites are deleted by this point.
+  Commit Table SiteFormTemp
+  Pack Table SiteFormTemp Graphic Interactive
+  
+  Print SiteRefAlias & " exported. "
+
+  Fetch Next From ObsOnlyTable
+  CurrentRow = CurrentRow + 1
+  If CurrentRow > NumOfRows Then
+    ProgressBar = -1 'All done!
+  Else
+    ProgressBar = CurrentRow 'else do next row
+  End If
+	
+  Exit Sub
+	
+ExporterError:
+  Note "Error: " + Error$()
+  Print "Failed miserably."
+  ProgressBar = -1 ' End exporting
+End Sub                                                             'Blockend
+
+Sub ShowExporterHelp                                                'Blockstart
+  Note "Things to be aware of: " & Chr$(10) &  "1. Files will be overwritten automatically - choose your folder wisely." & Chr$(10) & "2. If there is an unexpected error the process will be canceled and any remaining sites will NOT be exported." & Chr$(10) & "3. You will have to map a network drive in order to save the files directly to the network."
+End Sub                                                             'Blockend
+
+Function GetLayoutTableRowId(sTextValue as String, slayoutTable as String) as Integer 'Blockstart
+  OnError goto rowiderror
+      
+  Dim oText  as Object
+  Dim aObj   as Alias
+  Dim aRowId as Alias
+
+  aRowId = sLayoutTable + ".RowID"
+  aObj = sLayoutTable + ".OBJ"
+
+  ' Search through the layout window's table to find the text object with
+  ' the given text (sTextValue)
+  Fetch First From sLayoutTable
+  Do Until EOT(sLayoutTable)
+    oText = aObj
+    If ObjectInfo(oText, OBJ_INFO_TYPE) = OBJ_TYPE_TEXT Then
+      If ObjectInfo(oText, OBJ_INFO_TEXTSTRING) = sTextValue Then
+        ' We've found the Id so exit the function
+        GetLayoutTableRowId = aRowId
+        Exit Function
+      End If
+    End If
+    Fetch Next From sLayoutTable
+  Loop
+      
+  Exit Sub
+	
+rowiderror:
+  Note "Error: " + Error$()
+End Function                                                        'Blockend
+
+Sub UpdateLayoutText(sNewText as String, sLayoutTable as String, iRowId as Integer) 'Blockstart 
+  OnError goto ULTError
+
+  Dim oText as Object
+  Dim aObj  as Alias
+
+  aObj = sLayoutTable + ".OBJ"
+
+  Fetch Rec iRowId From sLayoutTable
+
+  oText = aObj
+
+  If sNewText = "" Then
+    sNewText = " "
+  End If
+      
+  Alter Object oText Info OBJ_INFO_TEXTSTRING, sNewText
+  Update sLayoutTable
+    Set OBJ = oText
+    Where ROWID = iRowId
+              
+  Exit Sub
+	
+ULTError:
+    Note "Error: " + Error$()
+End Sub                                                              'Blockend
