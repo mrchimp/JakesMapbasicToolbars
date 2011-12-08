@@ -19,16 +19,16 @@ Export one plan per record in table with just a few clicks.
  * Override the layer styles
  * 13 different output file formats, including PNG, BMP, WMF, JPEG, TIFF, PSD, EMF etc.
 
-![Screenshot](http://deviouschimp.co.uk/misc/mapbasicscreenshots/SitePlanExporterScreenshot.png "Screenshot")
+[Screenshot](http://deviouschimp.co.uk/misc/mapbasicscreenshots/SitePlanExporterScreenshot.png "Screenshot")
 
 
 __Show overlapping objects__
 
-![Screenshot](http://deviouschimp.co.uk/misc/mapbasicscreenshots/OverlapDetector.png "Screenshot")
+[Screenshot](http://deviouschimp.co.uk/misc/mapbasicscreenshots/OverlapDetector.png "Screenshot")
 
 __Update areas__
 
-![Screenshot](http://deviouschimp.co.uk/misc/mapbasicscreenshots/UpdateAreas.png "Screenshot")
+[Screenshot](http://deviouschimp.co.uk/misc/mapbasicscreenshots/UpdateAreas.png "Screenshot")
 
 __Export MIF DXF and SHP at once__
 
@@ -47,13 +47,13 @@ __Window Tool__
 * Duplicate windows
 * Rotate windows (beta)
 
-![Screenshot](http://deviouschimp.co.uk/misc/mapbasicscreenshots/WindowTool.png "Screenshot")
+[Screenshot](http://deviouschimp.co.uk/misc/mapbasicscreenshots/WindowTool.png "Screenshot")
 
 
 __Projection Tool__
  * Find projection information and other information about tables and windows
 
-![Screenshot](http://deviouschimp.co.uk/misc/mapbasicscreenshots/WindowInfo.png "Screenshot")
+[Screenshot](http://deviouschimp.co.uk/misc/mapbasicscreenshots/WindowInfo.png "Screenshot")
 
 __Circle Tool (beta)__
 * Draw a circle of a given area/radius/circumference
