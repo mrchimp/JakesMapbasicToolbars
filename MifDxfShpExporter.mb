@@ -25,6 +25,11 @@ Declare Sub Sleep Lib "kernel32" Alias "Sleep" (ByVal dwMilliseconds As Integer)
 Sub MifDxfShpExporter                                               'Blockstart
   OnError goto whats_wrong
 
+  If NumTables() < 1 Then
+    Note "Export what? You'll need to open a table first."
+    Exit Sub
+  End If
+  
   ' DXF MIF SHP EXPORTER VARS
   Dim SQLStr As String
   Dim SearchType As Integer               ' type of search in Site_ref search - "=" or "like"

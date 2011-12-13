@@ -10,37 +10,38 @@ Include "globals.def"
 Sub OverlapDetector                                                 'Blockstart
   OnError goto NoOverlaps
       
-  Dim RowCount                As Integer   'Total number of rows
-  Dim TempObj1                As Object    'Object variable 1
-  Dim TempObj2                As Object    'Object variable 2
-  Dim OverlapArea             As Float     'Area of the found overlap
-  Dim x                       As Integer   'used for counting...
-  Dim y                       As Integer   'used for counting...
-  Dim ObjectAlias             As Alias     'Alias for the Obj column
-  Dim SiteRef1                As String    'Site_ref var 1
-  Dim SiteRef2                As String    'Site_ref var 2
-  Dim OverlapThreshold        As Float     'Any overlaps of area smaller than this will be ignored
-  Dim AreaUnitsNum            As integer
-  Dim ResultsURL              As String
-  Dim ResultsTableName        As String
-  Dim TableNameIncrementor    As Integer
-  Dim ColumnListVar(10)       As String
-  Dim SiteRefColNum           As Integer
-  Dim SiteRefColName          As String
-  Dim TableNum                As Integer
-  Dim TableName               As String
-  Dim ResultsBasename         As String
-  Dim SiteRefAlias            As Alias
+  Dim RowCount                As Integer  ' Total number of rows
+  Dim TempObj1                As Object   ' Object variable 1
+  Dim TempObj2                As Object   ' Object variable 2
+  Dim OverlapArea             As Float    ' Area of the found overlap
+  Dim x                       As Integer  ' Used for counting loops
+  Dim y                       As Integer  ' Used for counting loops
+  Dim ObjectAlias             As Alias    ' Alias for the Obj column
+  Dim SiteRef1                As String   ' Site_ref var 1
+  Dim SiteRef2                As String   ' Site_ref var 2
+  Dim OverlapThreshold        As Float    ' Any overlaps of area smaller than 
+                                          ' this will be ignored
+  Dim AreaUnitsNum            As Integer  ' The type of units chosen
+  Dim ResultsTableName        As String   ' The name of the results table as it 
+                                          ' appears in mapinfo. Not necessarily
+                                          ' the same as the temporary file name.
+  Dim ResultsBasename         As String   ' The name of the created table before
+                                          ' the incrementor has been appended
+  Dim TableNameIncrementor    As Integer  ' Append to table name to make it unique 
+  Dim ColumnListVar(10)       As String   ' A list of columns in a given table
+  Dim SiteRefColNum           As Integer  ' The chosen column's number
+  Dim SiteRefColName          As String   ' The chosen column's name
+  Dim TableNum                As Integer  ' The chosen table's number
+  Dim TableName               As String   ' The chosen table's name
+  Dim SiteRefAlias            As Alias    ' Alias for primary key column
+  Dim TableNums(1)            As String   ' List of open tables
   
-  Dim TableNums(1) As String
+  ' Populate table list and list of columns in that table
   Call GetTableList(TableNums)
   Call ColumnList(TableNums(1),ColumnListVar)
 
-  ' Choose table
   Dialog
-  Title "Choose table"
-  
-  ' Table
+    Title "Choose table"
   Control StaticText
     Title "Table to analyse"
     Position 10, 10
@@ -53,7 +54,6 @@ Sub OverlapDetector                                                 'Blockstart
     Id 51
     Width 90
       
-  'Site ref col
   Control StaticText
     Title "Site name column"
     Position 10, 45
@@ -65,7 +65,6 @@ Sub OverlapDetector                                                 'Blockstart
     Width 90
     Position 10, 55
 
-  ' Threshold
   Control StaticText
     Title "Overlaps smaller than this will be ignored:"
     Position 10, 80
@@ -86,11 +85,13 @@ Sub OverlapDetector                                                 'Blockstart
     Position 50, 120
 
   If CommandInfo(CMD_INFO_DLG_OK) Then
+    ' Turn input data into useful values
     TableName = TableInfo(TableNum, TAB_INFO_NAME)
     Set Area Units AreaUnitsArray(AreaUnitsNum)
+    
+    ' Select all records with objects into a temporary table
     Select * from TableName Into OverlapTable Where Obj NoSelect
     RowCount = TableInfo(OverlapTable, TAB_INFO_NROWS)
-    ResultsURL = TempFileName$("")
 
     'Set up column aliases
     SiteRefColName = ColumnInfo(TableName, "COL"&SiteRefColNum, COL_INFO_NAME)
@@ -106,13 +107,19 @@ Sub OverlapDetector                                                 'Blockstart
       ResultsTableName = ResultsBasename & TableNameIncrementor
     Loop
 
+    ' Create table to store results
     Create Table ResultsTableName
       (   SiteOne Char(30),
           SiteTwo Char(30),
-          overlapAmount Char(30)  )
-      File ResultsURL
+          overlapAmount Char(30)
+          ', percentOfSiteOne Char(30),
+          'percentOfSiteTwo Char(30) 
+      )
+      File TempFileName$("")
 
+    ' for each item in the table...
     For x = 1 To (RowCount - 1) Step 1
+      '...compare with every other item in the table
       For y = (x+1) To RowCount Step 1
         Fetch Rec x From OverlapTable
         SiteRef1 = SiteRefAlias
@@ -122,6 +129,7 @@ Sub OverlapDetector                                                 'Blockstart
         SiteRef2 = SiteRefAlias
         TempObj2 = ObjectAlias
 
+        ' Filter out points, lines and text - we can't measure their overlaps.
         If IsObjectRegion(TempObj1) And IsObjectRegion(TempObj2) Then
           OverlapArea = AreaOverlap(TempObj1, TempObj2)
           If OverlapArea > OverlapThreshold Then
@@ -141,7 +149,10 @@ Sub OverlapDetector                                                 'Blockstart
       Next
     Next
 
+    ' Show the results
     Browse * From ResultsTableName
+    
+    ' Close temporary table
     Close Table OverlapTable
   End If
 

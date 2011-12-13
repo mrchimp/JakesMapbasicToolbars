@@ -1,4 +1,5 @@
 *.mbx
+*.mbo
 *.png
 /screenshots/*
 /compiled/*

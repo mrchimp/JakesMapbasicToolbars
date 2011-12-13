@@ -10,28 +10,24 @@ Include "globals.def"
 Declare Sub UpdateValues
 Declare Sub ExitProg
 
-
 Define pi 3.1415926535897932384626433832795
 Define INPUT_AREA 1
 Define INPUT_CIRCUMFERENCE 2
 Define INPUT_RADIUS 3
 
-'Set Distance Units "m"
-'Set CoordSys Window FrontWindow()
-
-
-
 Sub CircleTool                                                      'Blockstart
   OnError Goto TheSectionOfFail
-
-  Set Distance Units "m" 
-  Set CoordSys Window FrontWindow()
-
-  Dim InputVal, a, r, c, d, x, y As float
-  Dim currentTab As String
+  
+  Dim InputVal, a, r, c, x, y As float
+  Dim CurrentTab As String
   Dim InputType  As Integer
   Dim NiceCircle As Object
   Dim InputTypes(3) as String
+  
+  CurrentTab = windowInfo(FrontWindow(), WIN_INFO_TABLE)
+
+  Set Distance Units "m" 
+  Set CoordSys Table CurrentTab
 
   InputTypes(1) = "Area"
   InputTypes(2) = "Circumference"
@@ -57,12 +53,16 @@ Sub CircleTool                                                      'Blockstart
       Title "Create Circle"
     Control CancelButton
       Title "Close"
-
+      
   If CommandInfo(CMD_INFO_DLG_OK) Then
-
-    If InputVal <= 0 Then
-      Note "Bigger number please."
+    if InputVal = 0 Then
+      Note "0? How am I supposed to do that?"
       Exit Sub
+    End If
+    
+    If InputVal < 0 Then
+      Note "I'm gonna go ahead and assume that was supposed to be a positive number."
+      InputVal = Sqr(InputVal * InputVal)
     End If
   
     Do Case InputType
@@ -79,13 +79,21 @@ Sub CircleTool                                                      'Blockstart
         c = 2 * pi * r
         a = pi * r * r
     End Case
-  
-    d = r * 2
 
-    currentTab = windowInfo(FrontWindow(), WIN_INFO_TABLE)
-    
     NiceCircle = CreateCircle(x, y, r)
-    INSERT INTO currentTab (obj) VALUES (NiceCircle)
+    print "nicecircle:" & NiceCircle
+    INSERT INTO CurrentTab (obj) VALUES (NiceCircle)
+
+    ' Ideally this section wouldn't be here
+    Dim DoubleCheck as String
+    DoubleCheck = "WARNING! This tool is a work in progress. " & Chr$(13) & 
+                  "Double check the size of the resulting circle!"
+    If InputType = INPUT_RADIUS Then
+      DoubleCheck = DoubleCheck & Chr$(13) & "Its radius should be " & Str$(r)
+    End if
+    ' ...It does seem to be working correctly now though
+    
+    Browse * From CurrentTab
   End If
      
   Exit Sub
@@ -93,4 +101,3 @@ Sub CircleTool                                                      'Blockstart
 TheSectionOfFail:
   Note "Error: "+ Error$()
 End Sub                                                           'Blockend
-

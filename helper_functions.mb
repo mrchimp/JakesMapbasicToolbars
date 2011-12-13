@@ -32,7 +32,7 @@ Sub GetTableList (TableList() as String)                            'Blockstart
   i = NumTables()
   ReDim TableList(i)
   For j = 1 to i
-      TableList(j) = Tableinfo(j, TAB_INFO_NAME)
+    TableList(j) = Tableinfo(j, TAB_INFO_NAME)
   Next
 End Sub                                                             'Blockend
  
@@ -53,6 +53,8 @@ Function ChooseTable As String                                      'Blockstart
 
   If CommandInfo(CMD_INFO_DLG_OK) Then
     ChooseTable = TableInfo(TableNum, TAB_INFO_NAME)
+  Else
+    ChooseTable = ""
   End If
 End Function                                                        'Blockend
 

@@ -4,7 +4,7 @@
 '* Source available at github.com/mrchimp/JakesMapbasicToolbars *
 '****************************************************************
 
-Define TOOLBAR_VERSION 6.7
+Define TOOLBAR_VERSION 6.8
 
 Global ToolVersion As String
 Global SitePlanExportFolder As String         ' Destination for exported site plans.
@@ -31,8 +31,8 @@ Declare Function WindowTypeNumToString (TypeNum as Integer) As String
 Declare Sub GetEditableTable(TableName as String)
 
 ' Defined in SitePlanExplorer.mb
-Declare Sub ProgressBarExport 
-Declare Sub SitePlanExport
+Declare Sub SitePlanExporter 
+Declare Sub ExportPlan
 Declare Sub SitePlanTableSelectHandler
 
 ' Defined in AreaUpdater.mb
@@ -48,6 +48,7 @@ Declare Sub OverlapDetector
 Declare Sub MifDxfShpExporter
 
 ' Defined in WindowTools.mb
+' Declare Sub CreateLayoutFromMapper
 Declare Sub NewA4LayoutP
 Declare Sub NewA3LayoutP
 Declare Sub NewA4LayoutL

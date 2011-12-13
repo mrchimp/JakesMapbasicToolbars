@@ -19,54 +19,37 @@ Dim SiteRefAlias As Alias          ' i.e. SiteForm.Site_ref
 Dim SiteLabelAlias As Alias        ' i.e. SiteForm.Site_name
 Dim SkippedSum As Integer          ' counts how many couldn't be exported (i.e. had no obj)
 Dim SiteRef As String              ' name of "Site_ref" column
-Dim SiteLabelCol	as String      ' column to use when label site plans
-Dim SiteLabel	as String          ' column to use when label site plans
+Dim SiteLabelCol	as String        ' column to use when label site plans
+Dim SiteLabel	as String            ' column to use when label site plans
 Dim NumOfRows As Integer           ' number of rows in selected table
 Dim TextObjRowId as Integer
 Dim sLayoutTable as String
 
 ' Styles and settings for exported plans
-Dim ExportResolution As Integer ' default=150
+Dim ExportResolution As Integer   ' default=150
 Dim ExportPaperSize As Integer
-Dim FileType As Integer                         ' Chosen file type as index of FileTypeArray
-Dim FileTypeStr As String                       ' File type as string - for use with Save Window command
-'Dim FileTypeArray(13) as String
+Dim FileType As Integer           ' Chosen file type as index of FileTypeArray
+Dim FileTypeStr As String         ' File type as string - for use with Save Window command
 
-' Main siteplan function. This calls SitePlanExport 
+' Main siteplan function. This calls ExportPlan
 ' repeatedly and controls the progress bar.
-'Declare Sub ProgressBarExport
-'Declare Sub SitePlanExport
 Declare Sub SiteLabelToggler
 Declare Sub ShowExporterHelp
-Declare Function GetLayoutTableRowId (TextValue as String, slayoutTable as String) as Integer
+Declare Function GetLayoutTableRowId(TextValue as String, slayoutTable as String) as Integer
 Declare Sub UpdateLayoutText(sNewText as String, slayoutTable as String, iRowId as Integer)
 
 ' Get system time to the millisecond
 Declare Function GetTickCount Lib "kernel32.dll" () As Integer 
 
-Sub SitePlanTableSelectHandler                                      'Blockstart
-  Dim ColumnListVar(10) as String
-  Dim strTable as string
-
-  strTable = TableInfo(readcontrolvalue(51), TAB_INFO_NAME)
-
-  Call ColumnList(strTable,ColumnListVar)
-
-  Alter Control 52 Title from Variable ColumnListVar
-  Alter Control 53 Title from Variable ColumnListVar
-End Sub                                                             'Blockend
-
-Sub SiteLabelToggler                                                'Blockstart
-  If readcontrolvalue(54) <> 0 Then
-    Alter Control 53 Enable
-  Else 
-    Alter Control 53 Disable
-  End If
-End Sub                                                             'Blockend
-
-Sub ProgressBarExport                                               'Blockstart
+' Exports one image per record from a given table
+Sub SitePlanExporter                                                'Blockstart
   OnError goto site_plan_issues
 
+  If NumTables() < 1 Then
+    Note "Export plans from what? You'll need to open a table first."
+    Exit Sub
+  End If
+  
   Dim TimerStart          as Integer
   Dim TimerEnd            as Integer
 
@@ -80,9 +63,6 @@ Sub ProgressBarExport                                               'Blockstart
 
   Dim ColumnListVar(10)   as String
   Dim TableNum            as Integer
-  'Dim TableNums(1)        As String
-
-  ' Dim SiteLabelToggler    as Logical
   
   Dim i as integer
   Dim j as integer
@@ -315,7 +295,7 @@ Sub ProgressBarExport                                               'Blockstart
     Print "Found " & NumOfRows & " records with objects attached. Exporting plans..."
     
     ProgressBar "Exporting Site Plans..."
-      Calling SitePlanExport
+      Calling ExportPlan
       Range NumOfRows
 
     Drop Table ObsOnlyTable
@@ -337,7 +317,30 @@ site_plan_issues:
   note "There was a problem: " & Error$()
 End Sub                                                             'Blockend
 
-Sub SitePlanExport                                                  'Blockstart
+' Updates the column list when the table dropdown is changed.
+Sub SitePlanTableSelectHandler                                      'Blockstart
+  Dim ColumnListVar(10) as String
+  Dim strTable as string
+
+  strTable = TableInfo(readcontrolvalue(51), TAB_INFO_NAME)
+
+  Call ColumnList(strTable,ColumnListVar)
+
+  Alter Control 52 Title from Variable ColumnListVar
+  Alter Control 53 Title from Variable ColumnListVar
+End Sub                                                             'Blockend
+
+' Disable/enable label column drop down when checkbox "include label" is ticked
+Sub SiteLabelToggler                                                'Blockstart
+  If readcontrolvalue(54) <> 0 Then
+    Alter Control 53 Enable
+  Else 
+    Alter Control 53 Disable
+  End If
+End Sub                                                             'Blockend
+
+
+Sub ExportPlan                                                      'Blockstart
   OnError goto ExporterError
       
   Dim TempObj     As Object
@@ -406,8 +409,7 @@ Sub SitePlanExport                                                  'Blockstart
   
   ' These 2 lines are needed to stop the map view from zooming further
   ' and further out. Without them it zooms to show all previous sites, 
-  ' not just the current site...I'm not sure why - it shoudln't do as 
-  ' the previous sites are deleted by this point.
+  ' not just the current site.
   Commit Table SiteFormTemp
   Pack Table SiteFormTemp Graphic Interactive
   
@@ -430,7 +432,10 @@ ExporterError:
 End Sub                                                             'Blockend
 
 Sub ShowExporterHelp                                                'Blockstart
-  Note "Things to be aware of: " & Chr$(10) &  "1. Files will be overwritten automatically - choose your folder wisely." & Chr$(10) & "2. If there is an unexpected error the process will be canceled and any remaining sites will NOT be exported." & Chr$(10) & "3. You will have to map a network drive in order to save the files directly to the network."
+  Note "Things to be aware of: " & Chr$(10) &  
+      "1. Files will be overwritten automatically - choose your folder wisely." & Chr$(10) & 
+      "2. If there is an unexpected error the process will be canceled and any remaining sites will NOT be exported." & Chr$(10) & 
+      "3. You will have to map a network drive in order to save the files directly to a network."
 End Sub                                                             'Blockend
 
 Function GetLayoutTableRowId(sTextValue as String, slayoutTable as String) as Integer 'Blockstart

@@ -19,146 +19,146 @@ Dim MapWin As Integer
 Dim CurrentWin As String
 
 Sub CloseWindowTool
-    End Program
+  End Program
 End Sub
 
 Sub NewA4LayoutP                                                    'Blockstart
-	MapWin = FrontWindow()
-	Layout
-		Width 125 Units "mm"
-		Height 168 Units "mm"
-	Set CoordSys Layout Units "mm"
-	Create Frame
-		Into Window FrontWindow()
-		( 5, 5 ) ( 205, 292 )
-		Pen MakePen(0, 1, RGB(0,0,0))
-		From Window MapWin
-		FillFrame On
-	Set Layout
-		Window FrontWindow()
-		Zoom 50
+  MapWin = FrontWindow()
+  Layout
+    Width 125 Units "mm"
+    Height 168 Units "mm"
+    Set CoordSys Layout Units "mm"
+  Create Frame
+    Into Window FrontWindow()
+    ( 5, 5 ) ( 205, 292 )
+    Pen MakePen(0, 1, RGB(0,0,0))
+    From Window MapWin
+    FillFrame On
+  Set Layout
+    Window FrontWindow()
+    Zoom 50
 End Sub                                                             'Blockend
 
 Sub NewA3LayoutP                                                    'Blockstart
-	MapWin = FrontWindow()
-	Layout
-		Width 105 Units "mm"
-		Height 148 Units "mm"
-	Set CoordSys Layout Units "mm"
+  MapWin = FrontWindow()
+  Layout
+    Width 105 Units "mm"
+    Height 148 Units "mm"
+  Set CoordSys Layout Units "mm"
 
-	LayoutWin = FrontWindow()
-	Create Frame
-		Into Window LayoutWin
-		( 5, 5 ) ( 292, 415 )
-		Pen MakePen(0, 1, RGB(0,0,0))
-		From Window MapWin
-		FillFrame On
+  LayoutWin = FrontWindow()
+  Create Frame
+    Into Window LayoutWin
+    ( 5, 5 ) ( 292, 415 )
+    Pen MakePen(0, 1, RGB(0,0,0))
+    From Window MapWin
+    FillFrame On
 
-	Set Window LayoutWin
-		Width 105 Units "mm"
-		Height 148 Units "mm"
-		Printer Papersize 8
-		
-	Set Layout
-		Window LayoutWin
-		zoom 25
+  Set Window LayoutWin
+    Width 105 Units "mm"
+    Height 148 Units "mm"
+    Printer Papersize 8
+          
+  Set Layout
+    Window LayoutWin
+    zoom 25
 End Sub                                                             'Blockend
 
 Sub NewA4LayoutL                                                    'Blockstart
-	MapWin = FrontWindow()
-    
-	Layout
-		Width 168 Units "mm"
-		Height 125 Units "mm"
-        
-	Set CoordSys Layout Units "mm"
-    
-	Create Frame
-		Into Window FrontWindow()
-		( 5, 5 ) ( 292, 205 )
-		Pen MakePen(0, 1, RGB(0,0,0))
-		From Window MapWin
-		FillFrame On
-        
-	Set Layout
-		Window FrontWindow()
-		Zoom 50
-        
-	Set Window FrontWindow()
-		Printer Orientation Landscape
+  MapWin = FrontWindow()
+
+  Layout
+    Width 168 Units "mm"
+    Height 125 Units "mm"
+  
+  Set CoordSys Layout Units "mm"
+
+  Create Frame
+    Into Window FrontWindow()
+    ( 5, 5 ) ( 292, 205 )
+    Pen MakePen(0, 1, RGB(0,0,0))
+    From Window MapWin
+    FillFrame On
+  
+  Set Layout
+    Window FrontWindow()
+    Zoom 50
+  
+  Set Window FrontWindow()
+    Printer Orientation Landscape
 End Sub                                                             'Blockend
 
 Sub NewA3LayoutL                                                    'Blockstart
-	MapWin = FrontWindow()
-	Layout
-		Width 148 Units "mm"
-		Height 105 Units "mm"
-	Set CoordSys Layout Units "mm"
+  MapWin = FrontWindow()
+  Layout
+    Width 148 Units "mm"
+    Height 105 Units "mm"
+  Set CoordSys Layout Units "mm"
 
-	LayoutWin = FrontWindow()
-	Create Frame
-		Into Window LayoutWin
-		( 5, 5 ) ( 415, 292 )
-		Pen MakePen(0, 1, RGB(0,0,0))
-		From Window MapWin
-		FillFrame On
+  LayoutWin = FrontWindow()
+  Create Frame
+    Into Window LayoutWin
+    ( 5, 5 ) ( 415, 292 )
+    Pen MakePen(0, 1, RGB(0,0,0))
+    From Window MapWin
+    FillFrame On
 
-	Set Window LayoutWin
-		Width 148 Units "mm"
-		Height 105 Units "mm"
-		Printer Papersize 8
+  Set Window LayoutWin
+    Width 148 Units "mm"
+    Height 105 Units "mm"
+    Printer Papersize 8
 
-	Set Layout
-		Window LayoutWin
-		zoom 25
-	
-	Set Window FrontWindow()
-		Printer Orientation Landscape
+  Set Layout
+    Window LayoutWin
+    zoom 25
+  
+  Set Window FrontWindow()
+    Printer Orientation Landscape
 End Sub                                                             'Blockend
 
 Sub RotateWin                                                       'Blockstart
-	CurrentWin = FrontWindow()
-	If WindowInfo(CurrentWin, WIN_INFO_TYPE) <> 3 Then
-		Beep
-		Note "Silly rabbit, Rotate Window function's for layout windows!"
-	Else
-		If WindowInfo(CurrentWin, WIN_INFO_PRINTER_ORIENT) = WIN_PRINTER_PORTRAIT Then
-			Set Window CurrentWin
-				Printer
-				Orientation Landscape
-		Else
-			Set Window CurrentWin
-				Printer
-				Orientation Portrait
-		End If
-	End If
+  CurrentWin = FrontWindow()
+  If WindowInfo(CurrentWin, WIN_INFO_TYPE) <> 3 Then
+    Beep
+    Note "Silly rabbit, Rotate Window function's for layout windows!"
+  Else
+    If WindowInfo(CurrentWin, WIN_INFO_PRINTER_ORIENT) = WIN_PRINTER_PORTRAIT Then
+      Set Window CurrentWin
+        Printer
+        Orientation Landscape
+    Else
+      Set Window CurrentWin
+        Printer
+        Orientation Portrait
+    End If
+  End If
 End Sub                                                             'Blockend
 
 Sub DuplicateWin                                                    'Blockstart
-	Dim DupStr As String
-	DupStr = WindowInfo(FrontWindow(), WIN_INFO_CLONEWINDOW)
-	Run Command DupStr
+  Dim DupStr As String
+  DupStr = WindowInfo(FrontWindow(), WIN_INFO_CLONEWINDOW)
+  Run Command DupStr
 End Sub                                                             'Blockend
 
 Sub RenameWindow                                                    'Blockstart
-	Dim WinName As String
+  Dim WinName As String
     
-    CurrentWin = FrontWindow()
-    WinName = WindowInfo(CurrentWin, WIN_INFO_NAME)
-    
-    Dialog
-        Title "New window name"
-        Control EditText
-            Value WinName
-            Into WinName
-            Width 200
-        Control CancelButton
-        Control OKButton
-    
-    If CommandInfo(CMD_INFO_DLG_OK) Then
-        Set Window CurrentWin
-            Title WinName
-    End If
+  CurrentWin = FrontWindow()
+  WinName = WindowInfo(CurrentWin, WIN_INFO_NAME)
+  
+  Dialog
+    Title "New window name"
+    Control EditText
+      Value WinName
+      Into WinName
+      Width 200
+    Control CancelButton
+    Control OKButton
+  
+  If CommandInfo(CMD_INFO_DLG_OK) Then
+    Set Window CurrentWin
+      Title WinName
+  End If
 End Sub                                                             'Blockend
 
 Sub GetWindowInfo                                                   'Blockstart

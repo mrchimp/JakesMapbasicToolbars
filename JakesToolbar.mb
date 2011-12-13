@@ -14,7 +14,6 @@ Declare Sub Bufferiser
 Declare Sub JakesToolsHelp
 Declare Sub CreateDir
 
-
 Sub Main                                                            'Blockstart
   OnError goto MainError
 
@@ -85,7 +84,7 @@ Sub Main                                                            'Blockstart
   Create Menu "Export" As
     "Export Site Plans..."
       HelpMsg "Exports one image per record for a given layer."
-      Calling ProgressBarExport,
+      Calling SitePlanExporter,
     "Export MIF DXF SHP..."
       HelpMsg "Export a MIF, DXF and SHP version of a given table."
       Calling MifDxfShpExporter
