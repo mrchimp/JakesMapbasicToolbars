@@ -1,7 +1,12 @@
 *.mbx
 *.mbo
 *.png
+*.tab
+*.dat
+*.tda
+*.tin
 /screenshots/*
 /compiled/*
+/backup/*
 *.swp
 *Thumbs.db

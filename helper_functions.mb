@@ -9,7 +9,6 @@ Include "globals.def"
 
 ' Returns a boolean value - true if table is open
 Function IsTableOpen(Byval TName as string) as logical              'Blockstart
-  Dim l as Logical
   Dim TabCount, LoopCount as Integer
 
   TabCount = Numtables()
@@ -36,7 +35,7 @@ Sub GetTableList (TableList() as String)                            'Blockstart
   Next
 End Sub                                                             'Blockend
  
-' Opens a dialog allowing use to choose an open table.
+' Opens a dialog allowing user to choose an open table.
 Function ChooseTable As String                                      'Blockstart
   Dim TableNum As Integer
   Dim TableArray(1) As String
@@ -165,17 +164,12 @@ End Sub                                                             'Blockend
 
 ' Returns true if an object is some kind of region: i.e. a shape with some
 ' form of circumference. i.e. a circle, square or polygon - not a line or point
-Function IsObjectRegion(ObjAlias As Object) As Logical              'Blockstart
-  Dim ObjectType As SmallInt
-  ObjectType = ObjectInfo(ObjAlias, OBJ_INFO_TYPE)
-  Do Case ObjectType
-    Case OBJ_TYPE_REGION
-      IsObjectRegion = True
-    Case OBJ_TYPE_RECT
-      IsObjectRegion = True
-    Case OBJ_TYPE_ROUNDRECT
-      IsObjectRegion = True
-    Case OBJ_TYPE_ELLIPSE
+Function IsObjectRegion(ByVal ObjAlias As Object) As Logical              'Blockstart
+  Do Case ObjectInfo(ObjAlias, OBJ_INFO_TYPE)
+    Case OBJ_TYPE_REGION, 
+         OBJ_TYPE_RECT, 
+         OBJ_TYPE_ROUNDRECT, 
+         OBJ_TYPE_ELLIPSE
       IsObjectRegion = True
     Case Else
       IsObjectRegion = False
@@ -271,7 +265,6 @@ Function WindowTypeNumToString (TypeNum as Integer) As String       'Blockstart
   End Case
 End Function                                                        'Blockend
 
-
 Sub GetEditableTable(TableName as String)                           'Blockstart
   Dim i as integer
   Dim j as integer
@@ -285,4 +278,11 @@ Sub GetEditableTable(TableName as String)                           'Blockstart
     End If
   Next
 End Sub                                                             'Blockend
+
+' Lets the user browser for a folder
+'Declare function CreateDirectory32 lib "Kernel32.dll" alias "CreateDirectoryA"  ' Used by the MIF DXF SHP exporter
+  '(byval sPath as string, tSecurity as SECURITY_ATTRIBUTES) as integer
+
+' pauses execution for a given times  
+'Declare Sub Sleep Lib "kernel32" Alias "Sleep" (ByVal dwMilliseconds As Integer)
 

@@ -4,11 +4,9 @@
 '* Source available at github.com/mrchimp/JakesMapbasicToolbars *
 '****************************************************************
 
-Include "icons.def"
 Include "mapbasic.def"
 Include "globals.def"
 
-Declare Sub main
 Declare Sub OpenLayoutWin
 Declare Sub AddFrame
 Declare Sub CloseWindowTool
@@ -18,12 +16,13 @@ Dim LayoutWin As String
 Dim MapWin As Integer
 Dim CurrentWin As String
 
-Sub CloseWindowTool
-  End Program
-End Sub
-
 Sub NewA4LayoutP                                                    'Blockstart
   MapWin = FrontWindow()
+  
+  If MapWin = 0 Then
+    Exit Sub
+  End If
+  
   Layout
     Width 125 Units "mm"
     Height 168 Units "mm"
@@ -41,6 +40,11 @@ End Sub                                                             'Blockend
 
 Sub NewA3LayoutP                                                    'Blockstart
   MapWin = FrontWindow()
+  
+  If MapWin = 0 Then
+    Exit Sub
+  End If
+  
   Layout
     Width 105 Units "mm"
     Height 148 Units "mm"
@@ -66,6 +70,10 @@ End Sub                                                             'Blockend
 
 Sub NewA4LayoutL                                                    'Blockstart
   MapWin = FrontWindow()
+  
+  If MapWin = 0 Then
+    Exit Sub
+  End If
 
   Layout
     Width 168 Units "mm"
@@ -90,6 +98,11 @@ End Sub                                                             'Blockend
 
 Sub NewA3LayoutL                                                    'Blockstart
   MapWin = FrontWindow()
+  
+  If MapWin = 0 Then
+    Exit Sub
+  End If
+  
   Layout
     Width 148 Units "mm"
     Height 105 Units "mm"
@@ -118,6 +131,11 @@ End Sub                                                             'Blockend
 
 Sub RotateWin                                                       'Blockstart
   CurrentWin = FrontWindow()
+  
+  If MapWin = 0 Then
+    Exit Sub
+  End If
+  
   If WindowInfo(CurrentWin, WIN_INFO_TYPE) <> 3 Then
     Beep
     Note "Silly rabbit, Rotate Window function's for layout windows!"
@@ -136,14 +154,23 @@ End Sub                                                             'Blockend
 
 Sub DuplicateWin                                                    'Blockstart
   Dim DupStr As String
-  DupStr = WindowInfo(FrontWindow(), WIN_INFO_CLONEWINDOW)
-  Run Command DupStr
+ 
+  If FrontWindow() = 0 Then
+    Exit Sub
+  End If
+  
+  Run Command WindowInfo(FrontWindow(), WIN_INFO_CLONEWINDOW)
 End Sub                                                             'Blockend
 
 Sub RenameWindow                                                    'Blockstart
   Dim WinName As String
     
   CurrentWin = FrontWindow()
+  
+  If FrontWindow() = 0 Then
+    Exit Sub
+  End If
+  
   WinName = WindowInfo(CurrentWin, WIN_INFO_NAME)
   
   Dialog

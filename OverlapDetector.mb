@@ -10,6 +10,8 @@ Include "globals.def"
 Sub OverlapDetector                                                 'Blockstart
   OnError goto NoOverlaps
       
+  If NumTables() < 1 Then Exit Sub End If
+      
   Dim RowCount                As Integer  ' Total number of rows
   Dim TempObj1                As Object   ' Object variable 1
   Dim TempObj2                As Object   ' Object variable 2
@@ -36,7 +38,6 @@ Sub OverlapDetector                                                 'Blockstart
   Dim SiteRefAlias            As Alias    ' Alias for primary key column
   Dim TableNums(1)            As String   ' List of open tables
   
-  ' Populate table list and list of columns in that table
   Call GetTableList(TableNums)
   Call ColumnList(TableNums(1),ColumnListVar)
 
@@ -95,13 +96,14 @@ Sub OverlapDetector                                                 'Blockstart
 
     'Set up column aliases
     SiteRefColName = ColumnInfo(TableName, "COL"&SiteRefColNum, COL_INFO_NAME)
-    SiteRefAlias = OverlapTable & "." & SiteRefColName
-    ObjectAlias = OverlapTable & "." & Obj
+    SiteRefAlias   = OverlapTable & "." & SiteRefColName
+    ObjectAlias    = OverlapTable & "." & Obj
     
     ' Check table name
-    ResultsBasename = "Overlaps_" + TableName
-    ResultsTableName = ResultsBasename
+    ResultsBasename      = "Overlaps_" + TableName
+    ResultsTableName     = ResultsBasename
     TableNameIncrementor = 1
+    
     Do While IsTableOpen(ResultsTableName) = True
       TableNameIncrementor = TableNameIncrementor + 1
       ResultsTableName = ResultsBasename & TableNameIncrementor
@@ -112,15 +114,13 @@ Sub OverlapDetector                                                 'Blockstart
       (   SiteOne Char(30),
           SiteTwo Char(30),
           overlapAmount Char(30)
-          ', percentOfSiteOne Char(30),
-          'percentOfSiteTwo Char(30) 
       )
       File TempFileName$("")
 
     ' for each item in the table...
-    For x = 1 To (RowCount - 1) Step 1
+    For x = 1 To (RowCount - 1)
       '...compare with every other item in the table
-      For y = (x+1) To RowCount Step 1
+      For y = (x+1) To RowCount
         Fetch Rec x From OverlapTable
         SiteRef1 = SiteRefAlias
         TempObj1 = ObjectAlias

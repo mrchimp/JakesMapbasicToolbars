@@ -9,25 +9,30 @@ Include "globals.def"
 Sub SiteAreaUpdate                                                  'Blockstart
   OnError goto AreaError
   
-  Dim SiteAreaNum, TableNum   as Integer
-  Dim TableName, AreaUnits    as String
-  Dim SiteAreaCol             as Alias
-  Dim ColumnListVar(10)       as String
+  If NumTables() < 1 Then
+    Exit Sub
+  End If
   
-  Dim TableNums(1) As String
+  Dim SiteAreaNum           as Integer ' Site area column number
+  Dim SiteAreaCol           as Alias   ' Area column name
+  Dim TableNum              as Integer
+  Dim TableName, AreaUnits  as String
+  Dim TableNames(1)         as String  ' List of open table names.
+  Dim ColumnListVar(10)     as String  ' array of selected table's columns
 
-  Call GetTableList(TableNums)
-  Call ColumnList(TableNums(1),ColumnListVar)
+  ' Populate lists
+  Call GetTableList(TableNames)
+  Call ColumnList(TableNames(1),ColumnListVar)
 
   Dialog
-  Title "Update Area Column"
+    Title "Update Area Column"
   Control StaticText
     Title "This tool updates the area column of a table."
   Control StaticText
     Title "Table"
     Position 10, 24
   Control PopupMenu
-    Title From Variable TableNums
+    Title From Variable TableNames
     Position 40, 20
     ID 51
     Calling TableSelectHandler
@@ -53,14 +58,18 @@ Sub SiteAreaUpdate                                                  'Blockstart
 
   If CommandInfo(CMD_INFO_DLG_OK) Then
     TableName = TableInfo(TableNum, TAB_INFO_NAME)
+    
     If IsTableOpen(TableName) Then
       SiteAreaCol = ColumnInfo(TableName, "COL"&SiteAreaNum, COL_INFO_NAME)
+      
       Select * From TableName Where Obj Into AreaTable Noselect
+      
       Update AreaTable
         Set SiteAreaCol = Area(obj, AreaUnitsArray(AreaUnits))
+        
       Close Table AreaTable
     Else
-      Note "The table " + TableName + " isn't open. What have you done?!"
+      Note "The table " & TableName & " isn't open. What have you done?!"
     End If
   End If
   

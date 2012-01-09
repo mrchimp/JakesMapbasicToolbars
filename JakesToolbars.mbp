@@ -12,3 +12,4 @@ Module=ViewTool.mbo
 Module=CoordsysTool.mbo
 Module=CircleTool.mbo
 Module=LineTool.mbo
+Module=Constraints.mbo

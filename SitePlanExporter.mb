@@ -7,48 +7,46 @@
 Include "mapbasic.def"
 Include "globals.def"
 
-Global StyleOverride as Logical
-Global CurrentRow As Integer       ' row being processed
-Global LabelSiteplans as Logical
-Dim SelectedTable As String        ' Table to be used (i.e. SiteForm)
-Dim MapWinID As Integer            ' Number of the main map window.
-Dim MapWindowName As String        ' Name of the main map window.
-Dim LayoutWindowNum As String      ' WindowID of the layout window that is being exported.
-Dim ObjColAlias As Alias           ' i.e. SiteForm.obj
-Dim SiteRefAlias As Alias          ' i.e. SiteForm.Site_ref
-Dim SiteLabelAlias As Alias        ' i.e. SiteForm.Site_name
-Dim SkippedSum As Integer          ' counts how many couldn't be exported (i.e. had no obj)
-Dim SiteRef As String              ' name of "Site_ref" column
-Dim SiteLabelCol	as String        ' column to use when label site plans
-Dim SiteLabel	as String            ' column to use when label site plans
-Dim NumOfRows As Integer           ' number of rows in selected table
-Dim TextObjRowId as Integer
-Dim sLayoutTable as String
+Global StyleOverride  As Logical
+Global CurrentRow     As Integer ' row being processed
+Global LabelSiteplans As Logical
+Dim SkippedSum        As Integer ' counts how many couldn't be exported (i.e. had no obj)
+
+' Window details
+Dim MapWinID          As Integer ' Number of the main map window.
+Dim MapWindowName     As String  ' Name of the main map window.
+Dim LayoutWindowNum   As String  ' WindowID of the layout window that is being exported.
+
+' Table details
+Dim SelectedTable     As String  ' Table to be used (i.e. SiteForm)
+Dim ObjColAlias       As Alias   ' i.e. SiteForm.obj
+Dim SiteRefAlias      As Alias   ' i.e. SiteForm.Site_ref
+Dim SiteRef           As String  ' name of "Site_ref" column
+Dim NumOfRows         As Integer ' number of rows in selected table
+
+' Labels
+Dim SiteLabelAlias    As Alias   ' i.e. SiteForm.Site_name
+Dim SiteLabelCol	    As String  ' column to use when label site plans
+Dim SiteLabel	        As String  ' column to use when label site plans
+Dim TextObjRowId      As Integer
+Dim sLayoutTable      As String
 
 ' Styles and settings for exported plans
-Dim ExportResolution As Integer   ' default=150
-Dim ExportPaperSize As Integer
-Dim FileType As Integer           ' Chosen file type as index of FileTypeArray
-Dim FileTypeStr As String         ' File type as string - for use with Save Window command
+Dim ExportResolution  As Integer ' default=150
+Dim ExportPaperSize   As Integer
+Dim FileType          As Integer ' Chosen file type as index of FileTypeArray
+Dim FileTypeStr       As String  ' File type as string - for use with Save Window command
 
-' Main siteplan function. This calls ExportPlan
-' repeatedly and controls the progress bar.
 Declare Sub SiteLabelToggler
 Declare Sub ShowExporterHelp
-Declare Function GetLayoutTableRowId(TextValue as String, slayoutTable as String) as Integer
 Declare Sub UpdateLayoutText(sNewText as String, slayoutTable as String, iRowId as Integer)
-
-' Get system time to the millisecond
-Declare Function GetTickCount Lib "kernel32.dll" () As Integer 
+Declare Function GetLayoutTableRowId(TextValue as String, slayoutTable as String) as Integer
 
 ' Exports one image per record from a given table
 Sub SitePlanExporter                                                'Blockstart
   OnError goto site_plan_issues
 
-  If NumTables() < 1 Then
-    Note "Export plans from what? You'll need to open a table first."
-    Exit Sub
-  End If
+  If NumTables() < 1 Then Exit Sub End If
   
   Dim TimerStart          as Integer
   Dim TimerEnd            as Integer
@@ -58,14 +56,12 @@ Sub SitePlanExporter                                                'Blockstart
   Dim SiteLabelNum        as Integer
   Dim TableName           as String
 
-  Dim WindowWidth         as Integer
-  Dim WindowHeight        as Integer
+  Dim WindowWidth, WindowHeight as Integer
 
   Dim ColumnListVar(10)   as String
   Dim TableNum            as Integer
   
-  Dim i as integer
-  Dim j as integer
+  Dim i, j as integer
 
   Dim TableNums(1) as String
   Call GetTableList(TableNums)
@@ -76,7 +72,7 @@ Sub SitePlanExporter                                                'Blockstart
   Call ColumnList(TableNums(1),ColumnListVar)
     
   Dialog
-  Title "Site Plan Exporter"
+    Title "Site Plan Exporter"
 
   Control GroupBox
     Title "What to export"
@@ -199,21 +195,18 @@ Sub SitePlanExporter                                                'Blockstart
   Control CancelButton
 
   If CommandInfo(CMD_INFO_DLG_OK) Then
-    TableName = TableInfo(TableNum, TAB_INFO_NAME)
-    SiteRef =  ColumnInfo(TableName, "COL" & SiteRefNum, COL_INFO_NAME)
-    SiteLabelCol =  ColumnInfo(TableName, "COL" & SiteLabelNum, COL_INFO_NAME)
-    SelectedTable = TableInfo(TableNum, TAB_INFO_NAME)
-
-    FileTypeStr = FileTypeArray(FileType)
-
-    Print "Paper size: " & ExportPaperSize
+    LayoutWindowNum = FrontWindow()
+    'TableName       = TableInfo(TableNum, TAB_INFO_NAME)
+    SiteRef         = ColumnInfo(TableName, "COL" & SiteRefNum, COL_INFO_NAME)
+    SiteLabelCol    = ColumnInfo(TableName, "COL" & SiteLabelNum, COL_INFO_NAME)
+    SelectedTable   = TableInfo(TableNum, TAB_INFO_NAME)
+    FileTypeStr     = FileTypeArray(FileType)
     
-    ' Create layout Window
     Do Case ExportPaperSize
-      Case 1 ' A4 landscape
+      Case 1 ' A4 Portrait
         WindowWidth  = 210
         WindowHeight = 297
-      Case 2 ' A4 landscape
+      Case 2 ' A4 Landscape
         WindowWidth  = 297
         WindowHeight = 210
       Case 3 ' A3 Portrait
@@ -226,18 +219,15 @@ Sub SitePlanExporter                                                'Blockstart
         Note "What kind of paper was that?!"
         Exit Sub
     End Case
-    
-    print "Width: " & WindowWidth
-    print "Height: " & WindowHeight
-    
+
+    ' Create layout window
     Layout
       Width  WindowWidth  Units "mm"
       Height WindowHeight Units "mm"
       Max
     Set CoordSys Layout Units "mm"
 
-    LayoutWindowNum = FrontWindow()
-
+    ' Create frame in layout window
     Create Frame
       Into Window LayoutWindowNum
       ( 0, 1 ) ( WindowWidth, WindowHeight )
@@ -246,10 +236,7 @@ Sub SitePlanExporter                                                'Blockstart
       From Window WindowID(MapWindowName)
       FillFrame On
 
-
-    ' == Add SiteRef label to layout window
-    Print "labelSiteplans = " & LabelSiteplans
-    Print "labelsiteplans=true: " & (LabelSiteplans <> 0)
+    ' Add SiteRef label to layout window
     If LabelSiteplans <> 0 Then
       sMarker = "[REFNUM]"
       Create Text
@@ -260,10 +247,9 @@ Sub SitePlanExporter                                                'Blockstart
       sLayoutTable = WindowInfo(LayoutWindowNum, WIN_INFO_TABLE)
       TextObjRowId = GetLayoutTableRowId(sMarker, sLayoutTable)
     End If
-    ' =====================
 
+    ' Get only obj rows from table
     MapWinID = WindowID(MapWindowName)
-    
     Select * From SelectedTable Where Obj Into ObsOnlyTable
     
     ' make a table to store each object - one at a time
@@ -279,16 +265,13 @@ Sub SitePlanExporter                                                'Blockstart
 
     Fetch First From ObsOnlyTable
 
-    NumOfRows = TableInfo(ObsOnlyTable, TAB_INFO_NROWS)
-
+    NumOfRows  = TableInfo(ObsOnlyTable, TAB_INFO_NROWS)
     SkippedSum = 0
     CurrentRow = 1
-
-    Print Chr$(13)&Chr$(13)&"--------------------------------------"&Chr$(13)
     TimerStart = GetTickCount()
     
     If NumOfRows = 0 Then
-      Note "No objects found in table. Do you expect me to just make it up or something?"
+      Note "No objects found in table."
       Exit Sub
     End If
     
@@ -303,8 +286,9 @@ Sub SitePlanExporter                                                'Blockstart
     Close Window LayoutWindowNum
 
     TimerEnd = GetTickCount()
-    print "(That took " & (TimerEnd - TimerStart) & "ms)"
+    Print "That took " & (TimerEnd - TimerStart) & "ms."
     Beep
+    
     If SkippedSum > 0 Then
       Note "Export Completed. " & SkippedSum & " Skipped. See message window for more info :)"
     Else
@@ -319,8 +303,7 @@ End Sub                                                             'Blockend
 
 ' Updates the column list when the table dropdown is changed.
 Sub SitePlanTableSelectHandler                                      'Blockstart
-  Dim ColumnListVar(10) as String
-  Dim strTable as string
+  Dim ColumnListVar(10), strTable as string
 
   strTable = TableInfo(readcontrolvalue(51), TAB_INFO_NAME)
 
@@ -441,12 +424,11 @@ End Sub                                                             'Blockend
 Function GetLayoutTableRowId(sTextValue as String, slayoutTable as String) as Integer 'Blockstart
   OnError goto rowiderror
       
-  Dim oText  as Object
-  Dim aObj   as Alias
-  Dim aRowId as Alias
+  Dim oText        as Object
+  Dim aObj, aRowId as Alias
 
   aRowId = sLayoutTable + ".RowID"
-  aObj = sLayoutTable + ".OBJ"
+  aObj   = sLayoutTable + ".OBJ"
 
   ' Search through the layout window's table to find the text object with
   ' the given text (sTextValue)

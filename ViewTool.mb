@@ -11,7 +11,6 @@ Include "globals.def"
 Dim mapwindow as String
 Dim TableFolder as String
 
-Declare Sub Main
 Declare Function createTable As Logical
 
 Function createTable As Logical                                     'Blockstart
@@ -85,11 +84,16 @@ CreateTableFail:
   Exit Function
 End Function                                                        'Blockend
 
+' Displays the contents of the View Table
 Sub ShowViewTable                                                   'Blockstart
   Dim tableexists as logical
 
+  ' Check the table is open
   If IsTableOpen("ViewTable") = false Then
+    ' If not, give them a chance to create/open it
     tableexists = createTable()
+    
+    ' If it's still not there then give up
     If tableexists = false Then
       Exit Sub
     End If
@@ -100,20 +104,21 @@ Sub ShowViewTable                                                   'Blockstart
   Browse * From ViewTable
 End Sub                                                             'Blockend
 
-Sub addView                                                         'Blockstart
+' Adds the current view to the View Table
+Sub AddView                                                         'Blockstart
   OnError Goto FailedToAdd
 
   mapwindow = FrontWindow()
   
-  If WindowInfo(mapwindow, WIN_INFO_TYPE) <> 1 Then
+  If WindowInfo(mapwindow, WIN_INFO_TYPE) <> WIN_MAPPER Then
     Note "Please select a map window first."
     Exit Sub
   End If
 
-  Dim neworold        as Integer
-  Dim windowlist      as String
-  Dim name_var        as String
-  Dim TableExists     as Integer
+  Dim neworold    as Integer
+  Dim windowlist  as String
+  Dim name_var    as String
+  Dim TableExists as Integer
 
   If IsTableOpen("ViewTable") = false Then
     tableexists = createTable()
@@ -126,7 +131,7 @@ Sub addView                                                         'Blockstart
   
   'Save table first otherwise the loop below will make it crash
   Commit Table ViewTable Interactive
-  Pack Table ViewTable Data Interactive
+  Pack   Table ViewTable Data Interactive
   Commit Table ViewTable Interactive
   
   'Get list of existing views
@@ -200,9 +205,17 @@ FailedToAdd:
     Exit Sub
 End Sub                                                             'Blockend
 
-Sub showView                                                        'Blockstart
+'Move the current map window to a view save in the View Table
+Sub ShowView                                                        'Blockstart
   OnError Goto FailPlace
 
+  mapwindow = FrontWindow()
+  
+  If WindowInfo(mapwindow, WIN_INFO_TYPE) <> WIN_MAPPER Then
+    Note "Please select a map window first."
+    Exit Sub
+  End If
+  
   Dim iLoop, iRows, iOut as Integer
   Dim sName(0) as String
   Dim tableexists as integer
@@ -214,14 +227,6 @@ Sub showView                                                        'Blockstart
     End If
   Else
     tableexists = true
-  End If
-
-  mapwindow = FrontWindow()
-  
-  'Check window is a map window
-  If WindowInfo(mapwindow, WIN_INFO_TYPE) <> 1 Then
-    Note "Please select a map window first."
-    Exit Sub
   End If
 
   'Save and pack table otherwise deleted rows will break things

@@ -1,0 +1,262 @@
+'*********************************
+'* Jake's Constraint Checker     *
+'* 2009-2011 All Rights Reserved *
+'*********************************
+
+Include "mapbasic.def"
+Include "globals.def"
+
+Define RES_PERCENT 1
+Define RES_AREA 2
+Define RES_BOOL 3
+
+Declare Sub OKHandler
+Declare Sub ResultTypeHandler 
+Declare Sub ConstraintsHelp
+
+Global ConstraintsSelArray() as Integer
+Global NumConstraints as Integer
+
+Sub CheckConstraints
+  OnError Goto ThatDidntWork
+
+  If NumTables() < 1 Then
+    Exit Sub
+  End If
+
+  Dim TableList(1)                                    as String
+  Dim SiteTableNum,  SiteRefColNum                    as Integer
+  Dim SiteTableName, SiteRefColName, ConstraintName   as String
+  Dim SiteRefAlias,  SiteObjAlias, ConstraintObjAlias as Alias
+  Dim SiteObj, ConstraintObj                          as Object
+  Dim ColumnListVar()                                 as String
+  Dim OverlapArea                                     as Float
+  Dim ResultType                                      as Integer
+  Dim AreaUnitsNum                                    as Integer
+  Dim AreaUnitsStr                                    as String
+  
+  Call GetTableList(TableList)
+  Call ColumnList(TableList(1),ColumnListVar)
+  
+  Dialog
+    Title "Select layers..."
+  
+  Control GroupBox
+    Title "Sites Table"
+    Width 50dW
+    Height 7dH
+    Position 1dW, 1dH
+  Control PopupMenu
+    Title From Variable TableList
+    Into SiteTableNum
+    ID 51
+    Calling TableSelectHandler
+    Position 4dW, 3dH
+    Width 43dW
+  Control PopupMenu
+    Title From Variable ColumnListVar
+    Into SiteRefColNum
+    Id 52
+    Position 4dW, 5dH
+    Width 43dW
+
+  Control GroupBox
+    Title "Constraints"
+    Width 50dW
+    Height 12dH
+    Position 1dW, 9dH
+  Control MultiListBox
+    Title From Variable TableList
+    ID 1
+    Position 4dW, 11dH
+    Width 43dW
+    Value 2
+    
+  Control GroupBox
+    Title "Result Type"
+    Position 1dW, 22dH
+    Width 50dW
+    Height 5dH
+  Control PopupMenu
+    Title "Percentage;Area;Yes/No"
+    Into ResultType
+    Position 4dW, 24dH
+    Calling ResultTypeHandler
+    ID 4
+  Control PopupMenu
+    Title From Variable AreaUnitsArray
+    Into AreaUnitsNum
+    Position 21dW, 24dH
+    Hide
+    ID 5
+    
+  Control Button
+    Title "Help"
+    Calling ConstraintsHelp
+  Control CancelButton
+  Control OkButton Calling OKHandler
+
+  If CommandInfo(CMD_INFO_DLG_OK) Then
+    Dim NumSites, NumConstraintRows         as Integer
+    Dim x, y, z, i                          as Integer
+    Dim ConstraintNum                       as Integer
+    Dim ExecStr, SiteRefVal, OverlapResult  as String
+    Dim Resultsbasename, ResultsTableName   as String
+    Dim OverlapPercent                      as Float
+    Dim SiteArea                            as Float
+    Dim ConstraintResult                    as Alias
+    Dim OverlapSum, OverlapObj              as Object
+    
+    AreaUnitsStr   = AreaUnitsArray(AreaUnitsNum)
+    SiteTableName  = TableInfo(SiteTableNum, TAB_INFO_NAME)
+    SiteRefColName = ColumnInfo(SiteTableName, "COL"&SiteRefColNum, COL_INFO_NAME)
+
+    Set Area Units AreaUnitsStr
+    Set Coordsys Table SiteTableName
+    
+    ' See this: http://gis.stackexchange.com/questions/18176/select-only-records-with-region-objects-in-mapbasic
+    ExecStr = "SELECT " & SiteRefColname & ", Obj FROM " & SiteTableName & " WHERE str$(OBJ) IN (""Region"",""Rectangle"",""Ellipse"",""Rounded Rectangle"") INTO SiteTable NOSELECT"
+    Run Command ExecStr
+
+    NumSites = TableInfo(SiteTable, TAB_INFO_NROWS)
+    SiteRefAlias = "SiteTable." & SiteRefColName
+    SiteObjAlias = "SiteTable.Obj"
+    
+    ' Check table name
+    ResultsBasename  = "Constraints_" + SiteTableName
+    ResultsTableName = ResultsBasename
+    i = 1
+    Do While IsTableOpen(ResultsTableName) = True
+      i = i + 1
+      ResultsTableName = ResultsBasename & i
+    Loop
+    
+    ' Make results table
+    ExecStr = "Create Table " & ResultsTableName & " ( SiteRef Char(30), "
+    For x = 1 to UBound(ConstraintsSelArray)
+      ConstraintNum = ConstraintsSelArray(x)
+      ConstraintName = TableInfo(ConstraintNum, TAB_INFO_NAME)
+      
+      If TableInfo(ConstraintName, TAB_INFO_MAPPABLE) = True Then
+        ExecStr = ExecStr & " " & TableInfo(ConstraintName, TAB_INFO_NAME) & " Char(30) "
+        If x <> UBound(ConstraintsSelArray) Then
+          ExecStr = ExecStr + ", "
+        End If
+      Else
+        Print ConstraintName & " is not a mappable table. Ignoring!"
+      End If
+    Next
+    ExecStr = ExecStr & " ) "
+    Run Command ExecStr
+    
+    For x = 1 To NumSites '=====================================================
+      
+      Fetch Rec x From SiteTable
+      
+      SiteObj    = SiteObjAlias
+      SiteRefVal = SiteRefAlias
+      SiteArea   = Area(SiteObj, AreaUnitsStr)
+
+      INSERT INTO ResultsTableName ( SiteRef ) VALUES ( SiteRefVal )
+    
+      For y = 1 To NumConstraints '=============================================
+        OverlapPercent = 0
+        ConstraintNum  = ConstraintsSelArray(y)
+        ConstraintName = TableInfo(ConstraintNum, TAB_INFO_NAME)
+        
+        If TableInfo(ConstraintName, TAB_INFO_MAPPABLE) = True Then
+          OverlapSum = CreateCircle(1, 1, 0)
+          Print x & "/" & NumSites & " - checking " & SiteRefVal & " against " & ConstraintName & "..."
+          
+          SELECT * FROM ConstraintName WHERE OBJ AND str$(OBJ) IN ("Region","Rectangle","Ellipse","Rounded Rectangle") Into ConstTab
+          NumConstraintRows  = TableInfo(ConstTab, TAB_INFO_NROWS)
+          ConstraintObjAlias = "ConstTab.Obj"
+          
+          For z = 1 To NumConstraintRows '======================================
+            Fetch Rec z From ConstTab
+            
+            ConstraintObj = ConstraintObjAlias
+            OverlapArea   = AreaOverlap(ConstraintObj, SiteObj)
+            
+            If OverlapArea > 0 Then
+              OverlapObj = overlap(ConstraintObj, SiteObj)
+              OverlapSum = combine(OverlapObj, OverlapSum)
+            End If
+          Next '================================================================
+          
+          ' check overlap
+          OverlapArea = Area(OverlapSum, AreaUnitsStr)
+          
+          If ResultType = RES_AREA Then
+            OverlapResult = Str$(OverlapArea) & " " & AreaUnitsStr
+          ElseIf ResultType = RES_PERCENT Then
+            OverlapPercent = (OverlapArea / SiteArea) * 100
+            OverlapResult  = Str$(OverlapPercent) & " %"
+          Else ' BOOL
+            If OverlapArea > 0 Then
+              OverlapResult = "Yes"
+            Else
+              OverlapResult = "No"
+            End If
+          End If
+          
+          ExecStr = "UPDATE " & ResultsTableName & " SET " & ConstraintName & " = """ & OverlapResult & """ WHERE RowID = " & x
+          Run Command ExecStr
+          
+          If OverlapArea > 0 Then
+            Print "Overlap of " & OverlapResult
+          End If
+         
+          Close Table ConstTab
+        End If
+      Next '==================================================================
+
+    Next '======================================================================
+
+    Drop Table SiteTable
+    Browse * From ResultsTableName
+  End If
+  
+  Exit Sub
+  
+ThatDidntWork:
+  Note "Error: "+ Error$()
+End Sub
+
+
+Sub OKHandler                                                     'Blockstart
+  Print Chr$(12)
+  Dim TableSelection as Integer
+  
+  TableSelection = ReadControlValue(1)
+  
+  If TableSelection = 0 Then
+    Note "Please select at least one constraints table."
+    Dialog Preserve
+  End If
+
+  NumConstraints = 0
+  Do until TableSelection = 0
+    NumConstraints = NumConstraints + 1
+    Redim ConstraintsSelArray(NumConstraints)
+    ConstraintsSelArray(NumConstraints) = TableSelection
+    TableSelection = ReadControlValue(1)
+  Loop
+End Sub                                                           'Blockend
+
+Sub ResultTypeHandler                                             'Blockstart
+  Dim ResultType as Integer
+  
+  ResultType = ReadControlValue(4)
+  If ResultType = RES_AREA Then
+    Alter Control 5 Show
+  Else
+    Alter Control 5 Hide
+  End If
+End Sub                                                           'Blockend
+
+Sub ConstraintsHelp                                               'Blockstart
+  Note "Compares one table to multiple other tables and tries to find overlaps." & Chr$(13) & 
+       "Designed for use with constraints layers." & Chr$(13) & Chr$(13) & 
+       "Non-region objects and records without objects will be ignored."
+End Sub                                                           'Blockend

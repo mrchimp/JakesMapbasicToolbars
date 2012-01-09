@@ -4,16 +4,15 @@
 '* Source available at github.com/mrchimp/JakesMapbasicToolbars *
 '****************************************************************
 
-Define TOOLBAR_VERSION 6.8
+Define TOOLBAR_VERSION 6.9
 
-Global ToolVersion As String
-Global SitePlanExportFolder As String         ' Destination for exported site plans.
+Global SitePlanExportFolder As String     ' Destination for exported site plans.
 
 ' These arrays are populated in JakesToolbar.mb
 Global AreaUnitsArray(16) as String
 Global FileTypeArray(13) as String
 
-' Defined in helper_functions.mb
+' helper_functions.mb
 Declare Sub ColumnList(strTableName as string, strColumnList() as string)
 Declare Sub GetFolderDeclare 
 Declare Sub GetTableList (TableList() as String)
@@ -21,34 +20,35 @@ Declare Sub GetFolder
 Declare Sub GetWindowNumList (WindowList() as Integer)
 Declare Sub GetWindowList (WindowList() as String)
 Declare Sub TableSelectHandler
+Declare Sub GetEditableTable(TableName as String)
 Declare Function SlashesToUnderscores(ByVal StrValue As String) As String
 Declare Function ChooseWindowNum As String
 Declare Function IsTableOpen(Byval TName as string) as logical
 Declare Function ChooseTable As String
-Declare Function IsObjectRegion(ObjAlias As Object) As Logical
+Declare Function IsObjectRegion(ByVal ObjAlias As Object) As Logical
 Declare Function ReplaceCharAtPosition(ByVal StrValue As String, ByVal Position As Integer, ByVal ReplaceWith As String) As String
 Declare Function WindowTypeNumToString (TypeNum as Integer) As String
-Declare Sub GetEditableTable(TableName as String)
 
-' Defined in SitePlanExplorer.mb
+' SitePlanExplorer.mb
 Declare Sub SitePlanExporter 
 Declare Sub ExportPlan
 Declare Sub SitePlanTableSelectHandler
+Declare Function GetTickCount Lib "kernel32.dll" () As Integer 
 
-' Defined in AreaUpdater.mb
+' AreaUpdater.mb
 Declare Sub SiteAreaUpdate
 
-' Defined in ShowUnmapped.mb
+' ShowUnmapped.mb
 Declare Sub ShowUnmapped
 
-' Defined in OverlapDetector.mb
+' OverlapDetector.mb
 Declare Sub OverlapDetector
+Declare Sub FindOverlaps
 
-' Defined in MixDxfShpExporter.mb
+' MixDxfShpExporter.mb
 Declare Sub MifDxfShpExporter
 
-' Defined in WindowTools.mb
-' Declare Sub CreateLayoutFromMapper
+' WindowTools.mb
 Declare Sub NewA4LayoutP
 Declare Sub NewA3LayoutP
 Declare Sub NewA4LayoutL
@@ -58,22 +58,44 @@ Declare Sub DuplicateWin
 Declare Sub RenameWindow
 Declare Sub GetWindowInfo
 
-' Defined in ViewApp.mb
+' ViewApp.mb
 Declare Sub AddView
 Declare Sub ShowView
 Declare Sub ShowViewTable
 
-' Defined in ProjectionTool.mb
+' ProjectionTool.mb
 Declare Sub GetTableCoordSys
 Declare Sub GetWindowCoordSys
 
-' Defined in LineTool.mb
+' LineTool.mb
 Declare Sub LineTool
 
-' Defined in CircleTool.mb
+' CircleTool.mb
 Declare Sub CircleTool
+
+' Constraints.mb
+Declare Sub CheckConstraints
 
 ' Global styles - used in SitePlanExporter
 Global PenStyle   As Pen
 Global BrushStyle As Brush
 Global PointStyle As Symbol
+
+' Dialog units. Makes aligning dialogs easier.
+' A nod to twiav.nl for this piece of cunning trickery
+Define dW *4	'Four dialog units equals one character in width
+Define dH *8	'Eight dialog units equals one character in height
+
+' Used by CreateDirectory32()
+Type SECURITY_ATTRIBUTES
+  nLength as integer              ' DWORD in Windows
+  lpSecurityDescriptor as integer ' LPVOID in Windows
+  bInheritHandle as integer       ' BOOL in Windows
+End type
+
+' Lets the user browser for a folder
+Declare function CreateDirectory32 lib "Kernel32.dll" alias "CreateDirectoryA"  ' Used by the MIF DXF SHP exporter
+  (byval sPath as string, tSecurity as SECURITY_ATTRIBUTES) as integer
+
+' pauses execution for a given times  
+Declare Sub Sleep Lib "kernel32" Alias "Sleep" (ByVal dwMilliseconds As Integer)

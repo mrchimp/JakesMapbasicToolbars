@@ -18,15 +18,15 @@ Sub Main                                                            'Blockstart
   OnError goto MainError
 
   ' Define some globals
-  AreaUnitsArray(1) = "hectare"
-  AreaUnitsArray(2) = "acre"
-  AreaUnitsArray(3) = "perch"
-  AreaUnitsArray(4) = "rood"
-  AreaUnitsArray(5) = "sq ch"
-  AreaUnitsArray(6) = "sq cm"
-  AreaUnitsArray(7) = "sq ft"
-  AreaUnitsArray(8) = "sq in"
-  AreaUnitsArray(9) = "sq km"
+  AreaUnitsArray(1)  = "hectare"
+  AreaUnitsArray(2)  = "acre"
+  AreaUnitsArray(3)  = "perch"
+  AreaUnitsArray(4)  = "rood"
+  AreaUnitsArray(5)  = "sq ch"
+  AreaUnitsArray(6)  = "sq cm"
+  AreaUnitsArray(7)  = "sq ft"
+  AreaUnitsArray(8)  = "sq in"
+  AreaUnitsArray(9)  = "sq km"
   AreaUnitsArray(10) = "sq li"
   AreaUnitsArray(11) = "sq m"
   AreaUnitsArray(12) = "sq mi"
@@ -55,37 +55,37 @@ Sub Main                                                            'Blockstart
   PointStyle = MakeSymbol(34,RED,18)
 
   Create Menu "WindowTools" as
-    "Create A4 Landscape Layout from Mapper" 
+    "Create A4 &Landscape Layout from Mapper" 
       HelpMsg "Creates a new A4 Layout window using the currently selected window."
       Calling NewA4LayoutL,
-    "Create A4 Portait Layout from Mapper"
+    "Create A4 &Portait Layout from Mapper"
       HelpMsg "Creates a new A4 Layout window using the currently selected window."
       Calling NewA4LayoutP,
-    "Create A3 Landscape Layout from Mapper"
+    "Create A3 L&andscape Layout from Mapper"
       HelpMsg "Creates a new A3 Layout window using the currently selected window."
       Calling NewA3LayoutL,
-    "Create A3 Portrait Layout from Mapper"
+    "Create A3 P&ortrait Layout from Mapper"
       HelpMsg "Creates a new A3 Layout window using the currently selected window."
       Calling NewA3LayoutP,
     "(-",
-    "Rename Window" 
+    "&Rename Window" 
       HelpMsg "Changes the title of the current window."
       Calling RenameWindow,
-    "Duplicate Window" 
+    "&Duplicate Window" 
       HelpMsg "Duplicates the currently selected window."
       Calling DuplicateWin,
     "Rotate Layout Window (beta)"
       HelpMsg "Makes a portrait layout window landscape and vice versa. Doesn't affect window content or non-layout windows."
       Calling RotateWin,
-    "View Window Info"
+    "View Window &Info"
       HelpMsg "Returns as much info as possible about the front-most window."
       Calling GetWindowInfo
   
   Create Menu "Export" As
-    "Export Site Plans..."
+    "&Site Plans..."
       HelpMsg "Exports one image per record for a given layer."
       Calling SitePlanExporter,
-    "Export MIF DXF SHP..."
+    "&MIF DXF and SHP..."
       HelpMsg "Export a MIF, DXF and SHP version of a given table."
       Calling MifDxfShpExporter
 
@@ -101,41 +101,43 @@ Sub Main                                                            'Blockstart
       HelpMsg "View the table in which views are stored."
       Calling ShowViewTable
   
-  Create Menu "CoordsysTools" As
-    "View Table Coord System..."
+  Create Menu "&CoordsysTools" As
+    "View &Table Coord System..."
       HelpMsg "Select a table from a list and view it's coordinate system descriptor."
       Calling GetTableCoordSys,
-    "View Window Coord System..." 
+    "View &Window Coord System..." 
       HelpMsg "View the coordinate system descriptor of the selected window."
       Calling GetWindowCoordSys
   
   Create Menu "&Jake's Tools" As
-    "&Coordsys" as "CoordsysTools",
-    "&Export" as "Export",
-    "&Views" as "ViewTool",
-    "&Window" as "WindowTools",
+    "&Coordsys" as "&CoordsysTools",
+    "&Export"   as "Export",
+    "&Views"    as "ViewTool",
+    "&Window"   as "WindowTools",
     "(-",
-    "Show &Unmapped Records..." 
+    "&Unmapped Records..." 
       HelpMsg "Display all records froma given table which do not have an object attached."
       Calling ShowUnmapped,
-    "Show &Overlaps..."
-      HelpMsg "Show which records overlap other records from the same table."
-      Calling OverlapDetector,
-    "Update &Areas..."
+    "&Area Update..."
       HelpMsg "Update the area column of a table byt calculating the areas of the attached objects."
       Calling SiteAreaUpdate,
+    "Co&nstraints Overlaps..."
+      HelpMsg "Find overlaps between one table and multiple other tables."
+      Calling CheckConstraints,
+    "&Overlaps..."
+      HelpMsg "Show which records overlap other records from the same table."
+      Calling OverlapDetector,
     "(-",
     "&Help" 
       HelpMsg "This is a help message about a help message. Click help to get help. I can't make it any easier."
       Calling JakesToolsHelp,
-    "&Close"
+    "C&lose"
       Helpmsg "Close Jake's Toolbar"
       Calling gtfo
 
   Alter Menu Bar Add "&Jake's Tools"
   
-  Alter ButtonPad "Drawing"
-    Add 
+  Create ButtonPad "Jake's Other Tools" As 
       Separator
       ToolButton
         Icon MI_ICON_LINE
@@ -158,7 +160,11 @@ MainError:
 End Sub                                                             'Blockend
 
 Sub gtfo
-  End Program
+  Dim ImDoneHere as Logical
+  ImDoneHere = Ask("Are you sure?", "&Yes", "&No")
+  If ImDoneHere Then
+    End Program
+  End If
 End Sub
 
 Sub JakesToolsHelp                                                  'Blockstart

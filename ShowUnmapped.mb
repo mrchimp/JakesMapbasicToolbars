@@ -9,6 +9,8 @@ Include "globals.def"
 Sub ShowUnmapped                                                    'Blockstart
   OnError goto UnmappedError
 
+  If NumTables() < 0 Then Exit Sub End If
+  
   Dim ResultsTable as String
   Dim TableName as String
   Dim TableNum as Integer

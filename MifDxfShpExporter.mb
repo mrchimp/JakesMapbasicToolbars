@@ -9,44 +9,23 @@
 Include "mapbasic.def"
 Include "globals.def"
 
-Type SECURITY_ATTRIBUTES
-  nLength as integer                          ' DWORD in Windows
-  lpSecurityDescriptor as integer             ' LPVOID in Windows
-  bInheritHandle as integer                   ' BOOL in Windows
-End type
-
-Declare function CreateDirectory32 lib "Kernel32.dll" alias "CreateDirectoryA"  ' Used by the MIF DXF SHP exporter
-  (byval sPath as string, tSecurity as SECURITY_ATTRIBUTES) as integer
-  
-' Pauses the program for a given amount of time.
-Declare Sub Sleep Lib "kernel32" Alias "Sleep" (ByVal dwMilliseconds As Integer)
-  
-
 Sub MifDxfShpExporter                                               'Blockstart
   OnError goto whats_wrong
 
-  If NumTables() < 1 Then
-    Note "Export what? You'll need to open a table first."
-    Exit Sub
-  End If
+  If NumTables() < 1 Then Exit Sub End If
   
-  ' DXF MIF SHP EXPORTER VARS
-  Dim SQLStr As String
-  Dim SearchType As Integer               ' type of search in Site_ref search - "=" or "like"
-  Dim TabFile As String                   ' TAB file to be exported by Dxf Mif Shp Exporter   e.g. "c:\temp\SiteForm.tab
-  Dim OutputFile As String                ' File for output of 
-  Dim TableName As String                 ' name of Tab file     e.g. "SiteForm"
-  Dim RunStr As String                    ' command string to be input into batch files
+  Dim TabFile      As String              ' TAB file to be exported by Dxf Mif Shp Exporter   e.g. "c:\temp\SiteForm.tab
+  Dim TableName    As String              ' name of Tab file     e.g. "SiteForm"
+  Dim RunStr       As String              ' command string to be input into batch files
   Dim ControlMaker As String              ' url of BAT file for creating ControlFile
-  Dim ControlFile As String               ' url of Control File for exporter
-  Dim SHPMaker As String                  ' url of BAT file for creating SHP
-  Dim dirStatus As Integer                ' status of directory being created - non-zero if folder is created
-  Dim tSecurity as SECURITY_ATTRIBUTES    ' for creating a new directory
-  Dim ExportFolder as String
-  Dim TableNum as Integer
-
-  ' Get table list
+  Dim ControlFile  As String              ' url of Control File for exporter
+  Dim SHPMaker     As String              ' url of BAT file for creating SHP
+  Dim dirStatus    As Integer             ' status of directory being created - non-zero if folder is created
+  Dim tSecurity    As SECURITY_ATTRIBUTES ' for creating a new directory
+  Dim ExportFolder As String
+  Dim TableNum     As Integer
   Dim TableNums(1) As String
+
   Call GetTablelist(TableNums)
 
   ExportFolder = ""
@@ -72,10 +51,8 @@ Sub MifDxfShpExporter                                               'Blockstart
 
 
   If CommandInfo(CMD_INFO_DLG_OK) Then
-    If ExportFolder = "" Then
-      Note "Please choose an output folder. (The dialog will now close. Sorry about that.)"
-      Exit Sub
-    End If
+  
+    If ExportFolder = "" Then Exit Sub End If
 
     TableName = TableInfo(TableNum, TAB_INFO_NAME)
 
@@ -100,7 +77,7 @@ Sub MifDxfShpExporter                                               'Blockstart
       Overwrite
     Print "DXF Exported"
 
-    ControlFile = ExportFolder + "ControlFile.fme"
+    ControlFile  = ExportFolder + "ControlFile.fme"
     ControlMaker = ExportFolder + "ControlMaker.bat"
 
     If Not FileExists(ControlFile) Then   'If control file doesn't exist then make a new one
@@ -139,9 +116,9 @@ Sub MifDxfShpExporter                                               'Blockstart
 
 whats_wrong:
   Note "Whoops. MifDxfShp Exporter Error: " & Error$() & Chr$(13) & 
-        "Export process has been aborted. " & Chr$(13) & 
-        "It wasn't supposed to do that." & Chr$(13) & 
-        "Please report this error so that it can be fixed."
+       "Export process has been aborted. " & Chr$(13) & 
+       "It wasn't supposed to do that." & Chr$(13) & 
+       "Please report this error so that it can be fixed."
 
 End Sub                                                             'Blockend
 

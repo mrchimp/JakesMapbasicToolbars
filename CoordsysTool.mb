@@ -12,16 +12,11 @@ Sub GetTableCoordSys                                                'Blockstart
   Dim TableName as String  
   Dim TheProjection as String
   
-  ' If no tables are open then exit silently
-  If NumTables() < 1 Then
-    Exit Sub
-  End If
+  If NumTables() < 1 Then Exit Sub End If
   
   ' Pick a table
   TableName = ChooseTable()
-
-  ' check user didn't press cancel
-  If TableName = "" Then 
+  If TableName = "" Then ' check user didn't press cancel
     Exit Sub
   End If
   
@@ -42,22 +37,18 @@ Sub GetTableCoordSys                                                'Blockstart
 End Sub                                                             'Blockend
 
 Sub GetWindowCoordSys                                               'Blockstart
-  OnError Goto TheMoon  
+  OnError Goto Borked  
   
-  ' If no windows are open then exit silently
-  If WindowNum = 0 Then
-    Exit Sub
-  End If
+  If NumWindows() < 1 Then Exit Sub End If
   
   Dim TheProjection   as String   ' projection string in MapInfo format
   Dim WindowType      as Integer  ' mapper/layout etc
-  Dim WindowNum       as Integer  ' Not quite sure what the difference...
-  Dim TheWindowID     as integer  ' ...between these two. It makes not sense!
+  Dim WindowNum       as Integer  ' Not quite sure what the difference is
+  Dim TheWindowID     as integer  ' between these two. It makes no sense!
                                   ' But it works so I guess it's ok.
   
-  ' Chose the front window and find out its details
-  WindowNum = FrontWindow()
-  WindowType = WindowInfo(WindowNum, WIN_INFO_TYPE)
+  WindowNum   = FrontWindow()
+  WindowType  = WindowInfo(WindowNum, WIN_INFO_TYPE)
   TheWindowID = WindowID(WindowNum)
 
   If WindowType = WIN_MAPPER Then
@@ -70,8 +61,8 @@ Sub GetWindowCoordSys                                               'Blockstart
         CoordSysName$(TheProjection) & Chr$(10) & Chr$(10) & 
         "Full MapInfo coord string: " & Chr$(10) & TheProjection & Chr$(10) & Chr$(10) & 
         "EPSG: " & CoordSysStringToEPSG(TheProjection) & Chr$(10) & 
-        "PRJ: " & CoordSysStringToPRJ$(TheProjection) & Chr$(10) & 
-        "WKT: " & CoordSysStringToWKT$(TheProjection) & Chr$(10)
+        "PRJ: "  & CoordSysStringToPRJ$(TheProjection) & Chr$(10) & 
+        "WKT: "  & CoordSysStringToWKT$(TheProjection) & Chr$(10)
         
   ElseIf WindowType = WIN_BROWSER Then
     Dim TableName as String 
@@ -87,14 +78,13 @@ Sub GetWindowCoordSys                                               'Blockstart
         CoordSysName$(TheProjection) & Chr$(10) & Chr$(10) & 
         "Full MapInfo coord string: " & Chr$(10) & TheProjection & Chr$(10) & Chr$(10) & 
         "EPSG: " & CoordSysStringToEPSG(TheProjection) & Chr$(10) & 
-        "PRJ: " & CoordSysStringToPRJ$(TheProjection) & Chr$(10) & 
-        "WKT: " & CoordSysStringToWKT$(TheProjection) & Chr$(10)
-  'ElseIf WindowType = WIN_LAYOUT Then
+        "PRJ: "  & CoordSysStringToPRJ$(TheProjection) & Chr$(10) & 
+        "WKT: "  & CoordSysStringToWKT$(TheProjection) & Chr$(10)
   Else
     Note "Can't get the projection for that window."
   End If
   
   Exit Sub
-TheMoon:
+Borked:
   Note "Error: "+ Error$()
 End Sub                                                             'Blockend
