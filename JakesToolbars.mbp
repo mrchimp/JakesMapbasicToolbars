@@ -1,7 +1,8 @@
 [Link]
 Application=JakesToolbar.mbx
 Module=JakesToolbar.mbo
-Module=helper_functions.mbo
+Module=Settings.mbo
+Module=Helper_functions.mbo
 Module=SitePlanExporter.mbo
 Module=AreaUpdater.mbo
 Module=ShowUnmapped.mbo

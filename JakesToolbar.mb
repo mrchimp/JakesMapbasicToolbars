@@ -9,7 +9,7 @@ Include "icons.def"
 Include "globals.def"
 
 Declare Sub Main
-Declare Sub gtfo
+Declare Sub GTFO
 Declare Sub Bufferiser
 Declare Sub JakesToolsHelp
 Declare Sub CreateDir
@@ -17,6 +17,9 @@ Declare Sub CreateDir
 Sub Main                                                            'Blockstart
   OnError goto MainError
 
+  SettingsURI = GetFolderPath$(FOLDER_MI_APPDATA) & "JakesMITools.txt"
+  Call CheckSettings
+  
   ' Define some globals
   AreaUnitsArray(1)  = "hectare"
   AreaUnitsArray(2)  = "acre"
@@ -35,6 +38,35 @@ Sub Main                                                            'Blockstart
   AreaUnitsArray(15) = "sq survey ft"
   AreaUnitsArray(16) = "yd"
   
+  ' NOTE: These two arrays are equivalent. 
+  ' If you change one, CHANGE THE OTHER!!
+  DistUnits(1)  = "m"
+  DistUnits(2)  = "km"
+  DistUnits(3)  = "cm"
+  DistUnits(4)  = "mm"
+  DistUnits(5)  = "mi"
+  DistUnits(6)  = "nmi"
+  DistUnits(7)  = "rd"
+  DistUnits(8)  = "ft"
+  DistUnits(9)  = "survey ft"
+  DistUnits(10) = "yd"
+  DistUnits(11) = "li"
+  DistUnits(12) = "ch"
+  DistUnits(13) = "in"
+  DistUnitNames(1)  = "Meters"
+  DistUnitNames(2)  = "Kilometers"
+  DistUnitNames(3)  = "Centimeters"
+  DistUnitNames(4)  = "Millimeters"
+  DistUnitNames(5)  = "Miles"
+  DistUnitNames(6)  = "Nautical Miles"
+  DistUnitNames(7)  = "Rods"
+  DistUnitNames(8)  = "Feet (international)"
+  DistUnitNames(9)  = "US Survey Feet"
+  DistUnitNames(10) = "yards"
+  DistUnitNames(11) = "Links"
+  DistUnitNames(12) = "Chains"
+  DistUnitNames(13) = "Inches"
+  
   FileTypeArray(1)  = "PNG"
   FileTypeArray(2)  = "BMP"
   FileTypeArray(3)  = "WMF"
@@ -49,11 +81,28 @@ Sub Main                                                            'Blockstart
   FileTypeArray(12) = "EMF"
   FileTypeArray(13) = "GEOTIFF"
 
-  'Make some default styles
+  OGRFormats(1)  = "BNA"
+  OGRFormats(2)  = "CSV"
+  OGRFormats(3)  = "DGN"
+  OGRFormats(4)  = "DXF"
+  OGRFormats(5)  = "ESRI Shapefile"
+  OGRFormats(6)  = "GeoJSON"
+  OGRFormats(7)  = "Geoconcept"
+  OGRFormats(8)  = "GeoRSS"
+  OGRFormats(9)  = "GML"
+  OGRFormats(10) = "GMT"
+  OGRFormats(11) = "GPX"
+  OGRFormats(12) = "GPSTrackMaker"
+  OGRFormats(13) = "KML"
+  OGRFormats(14) = "Mapinfo File"
+  OGRFormats(15) = "Memory"
+  
+  ' Make some default styles
   PenStyle   = MakePen(6,2,RED)
   BrushStyle = MakeBrush(01,RED,RED)
   PointStyle = MakeSymbol(34,RED,18)
-
+  
+  ' Load menu
   Create Menu "WindowTools" as
     "Create A4 &Landscape Layout from Mapper" 
       HelpMsg "Creates a new A4 Layout window using the currently selected window."
@@ -128,30 +177,33 @@ Sub Main                                                            'Blockstart
       HelpMsg "Show which records overlap other records from the same table."
       Calling OverlapDetector,
     "(-",
+    "Settings"
+      HelpMsg "View and change settings."
+      Calling SettingsDialog,
     "&Help" 
       HelpMsg "This is a help message about a help message. Click help to get help. I can't make it any easier."
       Calling JakesToolsHelp,
     "C&lose"
       Helpmsg "Close Jake's Toolbar"
-      Calling gtfo
+      Calling GTFO
 
   Alter Menu Bar Add "&Jake's Tools"
   
   Create ButtonPad "Jake's Other Tools" As 
-      Separator
-      ToolButton
-        Icon MI_ICON_LINE
-        HelpMsg "Click and drag on a map window to draw a line."
-        Cursor MI_CURSOR_CROSSHAIR
-        DrawMode DM_CUSTOM_LINE
-        Calling LineTool
-      ToolButton
-        Icon MI_ICON_ARROW_19
-        HelpMsg "Click on map to draw circle."
-        Cursor MI_CURSOR_CROSSHAIR
-        DrawMode DM_CUSTOM_POINT
-        Calling CircleTool
-      Show
+    Separator
+    ToolButton
+      Icon MI_ICON_LINE
+      HelpMsg "Click and drag on a map window to draw a line."
+      Cursor MI_CURSOR_CROSSHAIR
+      DrawMode DM_CUSTOM_LINE
+      Calling LineTool
+    ToolButton
+      Icon MI_ICON_ARROW_19
+      HelpMsg "Click on map to draw circle."
+      Cursor MI_CURSOR_CROSSHAIR
+      DrawMode DM_CUSTOM_POINT
+      Calling CircleTool
+    Show
   
   Exit Sub
 	
@@ -159,17 +211,16 @@ MainError:
     Note "Error: "+ Error$()
 End Sub                                                             'Blockend
 
-Sub gtfo
+Sub GTFO                                                            'Blockstart
   Dim ImDoneHere as Logical
   ImDoneHere = Ask("Are you sure?", "&Yes", "&No")
   If ImDoneHere Then
     End Program
   End If
-End Sub
+End Sub                                                             'Blockend
 
 Sub JakesToolsHelp                                                  'Blockstart
   Note "Jake's MapBasic Tools" & Chr$(13) & 
        "by Jake Gully" & Chr$(13)  & Chr$(13) & 
-       "Version " & TOOLBAR_VERSION & Chr$(13)  & Chr$(13) & 
-       "Source code is available at github.com/mrchimp/JakesMapbasicToolbars"
+       "Version " & TOOLBAR_VERSION
 End Sub                                                             'Blockend
