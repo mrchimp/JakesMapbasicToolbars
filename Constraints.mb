@@ -42,7 +42,7 @@ Sub CheckConstraints
     Title "Select layers..."
   
   Control GroupBox
-    Title "Sites Table"
+    Title "Main table"
     Width 50dW
     Height 7dH
     Position 1dW, 1dH
@@ -61,7 +61,7 @@ Sub CheckConstraints
     Width 43dW
 
   Control GroupBox
-    Title "Constraints"
+    Title "Tables to find overlaps with"
     Width 50dW
     Height 12dH
     Position 1dW, 9dH

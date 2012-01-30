@@ -1,0 +1,254 @@
+'****************************************************************
+'* Jake's Amazing Toolbar - Multi-Exporter Module               *
+'* 2009-2011 All Rights Reserved                                *
+'* Source available at github.com/mrchimp/JakesMapbasicToolbars *
+'****************************************************************
+
+Include "mapbasic.def"
+Include "globals.def"
+
+Declare Sub FillTargetField
+Declare Sub ME_Handler
+
+Dim TblChoice(0), FrmtChoice(0) as String
+Dim TargetURI     as String
+Dim OkToExport    as Logical
+Dim TableNums(1)  As String
+
+Sub MultiExport                                                     'Blockstart
+  OnError goto whats_wrong
+
+  Print Chr$(10) & Chr$(10) & Chr$(10) & Chr$(10) & Chr$(10)
+  Print "======================================================================"
+  
+  If NumTables() < 1 Then Exit Sub End If
+  
+  Dim TabFile       As String              ' TAB file to be exported by Dxf Mif Shp Exporter   e.g. "c:\temp\SiteForm.tab
+  Dim TableName     As String              ' name of Tab file     e.g. "SiteForm"
+  Dim RunStr        As String              ' command string to be input into batch files
+  Dim SHPMaker      As String              ' url of BAT file for creating SHP
+  Dim dirStatus     As Integer             ' status of directory being created - non-zero if folder is created
+  Dim tSecurity     As SECURITY_ATTRIBUTES ' for creating a new directory
+  Dim TableNum      As Integer
+  Dim FileType      As String
+  Dim ExportFile    As String
+  Dim TableChoice, FormatChoice As SmallInt
+  'Dim TargetPath    As String
+
+  Call GetTablelist(TableNums)
+
+  ExportFolder = ""
+  OkToExport   = True
+  
+  Dialog
+  Title "Choose which tables to export and which formats to export them in."
+  
+  Control StaticText
+    Title "Note: This function is in beta. Any records with MultiPoints or " & 
+          "without objects attached will be ignored. Also please note that " & 
+          "this will overwrite any files that it needs to - Choose your " & 
+          "folder wisely."
+    Position 10, 10
+    Height 40
+    Width 200
+    
+  Control StaticText
+    Title "Tables to export"
+    Position 10, 50
+  Control MultiListBox
+    Title From Variable TableNums
+    Into TableChoice
+    ID 1
+    Height 100
+    Width 100
+    Position 10, 60
+  
+  Control StaticText
+    Title "Formats to export in"
+    Position 120, 50
+  Control MultiListBox
+    Title From Variable OGRFormats
+    Into FormatChoice
+    ID 2
+    Height 100
+    Width 100
+    Position 120, 60
+    
+  Control Button
+    Title "Choose output folder"
+    Calling FillTargetField
+    Position 10, 170
+    
+  Control EditText
+    Value ""
+    Into ExportFolder
+    ID 3
+    Position 110, 170
+    Disable
+    
+  Control OKButton
+    Position 10, 190
+    Calling ME_Handler
+  Control Cancelbutton
+    Position 100, 190
+
+
+  If CommandInfo(CMD_INFO_DLG_OK) Then
+
+    'Print "Exiting!"
+   'Exit Sub
+  
+    If OkToExport = False Then
+      Print "exited"
+      Exit Sub
+    Else
+      Print "oktoexport wasnt false: " & str$(OkToExport)
+    End If
+  
+    print "TblChoice count: " & UBound(TblChoice)
+    print "FrmtChoice count: " & UBound(FrmtChoice)
+    print "TargetURI: " & TargetURI  
+    Print "ExportFolder: " & ExportFolder
+
+    ' Check that we know where OGR2OGR.exe is
+    If OGR2OGRURI = "" Then
+      Note "OGR2OGR has not been located. Please locate it now and try again."
+      Call SettingsDialog
+      Exit Sub
+    End If
+    
+    Dim i, j, TableCount, FormatCount, tblId as Integer
+    tSecurity.nLength = 24
+    TableCount = UBound(TblChoice)
+    FormatCount  = UBound(FrmtChoice)
+    
+    For i = 1 To TableCount
+      'TableName = TableInfo(TableNums(tblId), TAB_INFO_NAME)
+      TableName = tblChoice(i)
+      
+      Print "Exporting file: " & tblChoice(i)
+      
+      For j = 1 To FormatCount
+        FileType = FrmtChoice(j)
+        DirStatus = CreateDirectory32(ExportFolder & "\" & FileType, tSecurity)
+        ExportFile = ExportFolder & "\" & FileType & "\" & TableName
+        
+        Print "ExportFile: " & ExportFile
+        Print "FileType: " & FileType
+        Print "Exporting " & TableName & " as " & FileType
+        Print "J: " & j
+        
+        If FileType = "DXF" Then
+          Select * From TableName Where Obj Into JAExportTempTab1
+          Select * From JAExportTempTab1 Where IsObjectDXFSafe(Obj) Into JAExportTempTab2
+          Export JAExportTempTab2
+            Into ExportFolder + "\DXF\" + JAExportTempTab2 + ".dxf"
+            Type "DXF"
+            Overwrite
+            Preserve AttributeData
+            Preserve MultiPolygonRgns as Blocks
+          Drop Table JAExportTempTab2
+          Print TableName & " exported as DXF."
+        ElseIf FileType = "MIF" Then
+          Export TableName
+            Into ExportFolder + "\MIF\" + TableName + ".mif"
+            Type "MIF"
+            Overwrite
+          Print TableName & " exported as MIF."
+        ElseIf FileType = "DBF" Then
+          Export TableName
+            Into ExportFolder + "\DBF\" + TableName + ".dbf"
+            Type "DBF"
+            Overwrite
+          Print TableName & " exported as DBF."
+        ElseIf FileType = "ASCII" Then
+          Export TableName
+            Into ExportFolder + "\ASCII\" + TableName + ".asc"
+            Type "ASCII"
+            Overwrite
+            Titles
+          Print TableName & " exported as ASCII."
+        ElseIf FileType = "CSV" Then
+          Export TableName
+            Into ExportFolder + "\CSV\" + TableName + ".CSV"
+            Type "CSV"
+            Overwrite
+            Titles
+          Print TableName & " exported as CSV."
+        Else 
+          Call ExportOGR(TableName, FileType, ExportFile)
+        End If
+      Next
+    Next
+    
+    Note "All done! :D"
+  End If
+  
+  Exit Sub
+
+whats_wrong:
+  Note "Whoops. MifDxfShp exporter error: " & Error$() & Chr$(13) & 
+       "Export process has been aborted. " & Chr$(13) & 
+       "It wasn't supposed to do that." & Chr$(13) & 
+       "Please report this error so that it can be fixed."
+End Sub                                                             'Blockend
+
+Sub FillTargetField                                                 'Blockstart
+  Dim folder as String
+  
+  folder = BrowseForFolder(hWndOwner, sPrompt)
+  
+  Alter control 3 Value folder
+End Sub                                                             'Blockend
+
+Sub ME_Handler                                                      'Blockstart
+  Dim x, y as Integer
+  Dim testval as SmallInt
+
+  ' Table Choice ===============================================================
+  x = 1
+  testval = ReadControlValue(1)
+  
+  Do Until testval = 0
+    ReDim tblChoice(x)
+    tblChoice(x) = TableNums(testval)
+    Print "Found table: " & tblChoice(x) & " - " & testval
+    x = x + 1
+    testval = ReadControlValue(1)
+  Loop
+  
+  If UBound(TblChoice) = 0 Then
+    Note "No tables were selected."
+    OkToExport = False
+    Exit Sub
+  End If
+  '=============================================================================
+  
+  
+  ' Format choice ==============================================================
+  y = 0
+  testval = ReadControlValue(2)
+
+  Do Until testval = 0
+    y = y + 1
+    ReDim FrmtChoice(y)
+    FrmtChoice(y) = OGRFormats(testval)
+    Print "Found format: " & FrmtChoice(y) & " - " & testval
+    testval = readControlValue(2)
+  Loop
+  
+  If UBound(FrmtChoice) = 0 Then
+    Note "No output format was chosen."
+    OkToExport = False
+    Exit Sub
+  End If
+  '=============================================================================
+  
+  ' Get output URL
+  TargetURI  = ReadControlValue(3)
+  If TargetURI = "" Then
+    Note "Output folder not chosen"
+    OkToExport = False
+    Exit Sub
+  End If
+End Sub                                                             'Blockend

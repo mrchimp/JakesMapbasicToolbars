@@ -27,8 +27,6 @@ Sub SiteAreaUpdate                                                  'Blockstart
   Dialog
     Title "Update Area Column"
   Control StaticText
-    Title "This tool updates the area column of a table."
-  Control StaticText
     Title "Table"
     Position 10, 24
   Control PopupMenu

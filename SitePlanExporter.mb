@@ -195,8 +195,8 @@ Sub SitePlanExporter                                                'Blockstart
   Control CancelButton
 
   If CommandInfo(CMD_INFO_DLG_OK) Then
-    LayoutWindowNum = FrontWindow()
     'TableName       = TableInfo(TableNum, TAB_INFO_NAME)
+    TableName       = TableNums(TableNum)
     SiteRef         = ColumnInfo(TableName, "COL" & SiteRefNum, COL_INFO_NAME)
     SiteLabelCol    = ColumnInfo(TableName, "COL" & SiteLabelNum, COL_INFO_NAME)
     SelectedTable   = TableInfo(TableNum, TAB_INFO_NAME)
@@ -226,6 +226,7 @@ Sub SitePlanExporter                                                'Blockstart
       Height WindowHeight Units "mm"
       Max
     Set CoordSys Layout Units "mm"
+    LayoutWindowNum = FrontWindow()
 
     ' Create frame in layout window
     Create Frame
@@ -367,8 +368,8 @@ Sub ExportPlan                                                      'Blockstart
   ' Correct zoom level
   MapZoom = MapperInfo(MapWinID, MAPPER_INFO_ZOOM)
   MapZoom = MapZoom * 2
-  If MapZoom < 0.01 Then
-      MapZoom = 0.2
+  If MapZoom < 0.6 Then
+      MapZoom = 0.6
   End If
       
   Set Map
@@ -381,7 +382,7 @@ Sub ExportPlan                                                      'Blockstart
     End If
 	
   Save Window WindowID(LayoutWindowNum)
-    As SitePlanExportFolder + "\" & SlashesToUnderscores(SiteRefAlias) & "." & FileTypeStr
+    As ExportFolder + "\" & SlashesToUnderscores(SiteRefAlias) & "." & FileTypeStr
     Type FileTypeStr
     Width  210 Units "mm"
     Height 297 Units "mm"

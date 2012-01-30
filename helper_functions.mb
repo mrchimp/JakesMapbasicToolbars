@@ -106,31 +106,6 @@ Sub GetWindowNumList (WindowList() as Integer)                          'Blockst
   Next
 End Sub                                                             'Blockend
 
-'Blockstart ' BrowseForFolder Stuff --------------------------------------------
-' THE FOLLOWING ARE ALL NEEDED FOR THE BrowseForFolder FUNCTION TO WORK
-Define BIF_RETURNONLYFSDIRS &H1
-Define MAX_PATH 260
-Define CSIDL_DRIVES &H11
-Type BrowseInfo
-  hWndOwner      As Integer
-  pIDLRoot       As Integer
-  pszDisplayName As String
-  lpszTitle      As String
-  ulFlags        As Integer
-  lpfnCallback   As Integer
-  lParam         As Integer
-  iImage         As Integer
-End Type
-Dim hWndOwner As Integer
-Dim sPrompt As String
-Declare Sub CoTaskMemFree Lib "ole32.dll" (ByVal hMem As Integer)
-Declare Function lstrcat Lib "kernel32" Alias "lstrcatA" (ByVal lpString1 As String, ByVal lpString2 As String) As Integer
-Declare Function SHBrowseForFolder Lib "shell32" Alias "SHBrowseForFolderA"(lpbi As BrowseInfo) As Integer
-Declare Function SHGetPathFromIDList Lib "shell32" Alias "SHGetPathFromIDListA" (ByVal pidList As Integer, lpBuffer As String) As Integer
-Declare Function SHGetSpecialFolderLocation Lib "shell32.dll" (ByVal hwndOwner As Integer, ByVal nFolder As Integer, ppidl As Integer) As Integer
-Declare Function BrowseForFolder(hWndOwner As Integer, sPrompt As String) As String
-'Blockend ' End BrowseForFolder Stuff ==========================================
-
 ' Opens a dialog for user to choose an existing directory
 Function BrowseForFolder(hWndOwner As Integer, sPrompt As String) As String 'Blockstart
   Dim nNull As Integer
@@ -159,12 +134,12 @@ End Function                                                        'Blockend
 
 ' Wraps BrowseForFolder in a sub...
 Sub GetFolder                                                       'Blockstart
-  SitePlanExportFolder = BrowseForFolder(hWndOwner, sPrompt)
+  ExportFolder = BrowseForFolder(hWndOwner, sPrompt)
 End Sub                                                             'Blockend
 
 ' Returns true if an object is some kind of region: i.e. a shape with some
 ' form of circumference. i.e. a circle, square or polygon - not a line or point
-Function IsObjectRegion(ByVal ObjAlias As Object) As Logical              'Blockstart
+Function IsObjectRegion(ByVal ObjAlias As Object) As Logical        'Blockstart
   Do Case ObjectInfo(ObjAlias, OBJ_INFO_TYPE)
     Case OBJ_TYPE_REGION, 
          OBJ_TYPE_RECT, 
@@ -173,6 +148,16 @@ Function IsObjectRegion(ByVal ObjAlias As Object) As Logical              'Block
       IsObjectRegion = True
     Case Else
       IsObjectRegion = False
+  End Case
+End Function                                                        'Blockend
+
+' Returns true if object is safe for convertion to DXF
+Function IsObjectDXFSafe(ByVal ObjAlias As Object) As Logical       'Blockstart
+  Do Case ObjectInfo(ObjAlias, OBJ_INFO_TYPE)
+    Case OBJ_TYPE_MPOINT
+      IsObjectDXFSafe = False
+    Case Else
+      IsObjectDXFSafe = True
   End Case
 End Function                                                        'Blockend
 
@@ -279,10 +264,83 @@ Sub GetEditableTable(TableName as String)                           'Blockstart
   Next
 End Sub                                                             'Blockend
 
-' Lets the user browser for a folder
+' Lets the user browse for a folder
 'Declare function CreateDirectory32 lib "Kernel32.dll" alias "CreateDirectoryA"  ' Used by the MIF DXF SHP exporter
   '(byval sPath as string, tSecurity as SECURITY_ATTRIBUTES) as integer
 
 ' pauses execution for a given times  
 'Declare Sub Sleep Lib "kernel32" Alias "Sleep" (ByVal dwMilliseconds As Integer)
 
+
+
+' Note: pass in TargetFile rather than TargetDir 
+' as some filetypes don't match extension
+Sub ExportOGR(TblName as String, FileType as String, TargetFile as String) 'Blockstart
+  OnError Goto OGRError
+
+  Dim TableFileName, RunStr, MakerBAT, ExportPath, TempTabURI As String
+  Dim StartTime, EndTime as Integer
+  
+  ExportPath = PathToDirectory$(TargetFile)
+  TempTabURI = PathToDirectory$(TempFileName$("")) & "tmptab.tab"
+  
+  If FileType = "DXF" Then
+    SELECT * FROM TblName WHERE Obj INTO tmptab
+    SELECT Obj FROM tmptab WHERE IsObjectDXFSafe(Obj) INTO ExportTab
+  Else
+    SELECT * FROM TblName WHERE Obj INTO ExportTab
+  End If
+  
+  Browse * From ExportTab
+  
+  Commit Table ExportTab As TempTabURI
+  
+  RunStr        = "OGR2OGR -f """ & FileType & """ """ & TargetFile & """ """ & TempTabURI & """ -overwrite -skipfailures" & Chr$(10) & "PAUSE" & Chr$(10) & "DEL ""%~f0"""
+  MakerBAT      = GetFolderPath$(FOLDER_MI_APPDATA) & "DELETEME.bat"
+  
+  Print "ExportPath: " & ExportPath
+  'Print "TableFileName: " & TableFileName
+  Print "RunStr: " & RunStr
+  Print "MakerBAT: " & MakerBAT
+  Print "TblName: " & TblName
+  Print "FileType: " & FileType
+  Print "TargetFile: " & TargetFile
+  
+  Open File MakerBAT
+    For Output
+    Access Write
+    As #1
+  Print #1, RunStr
+  Close File #1
+  
+  Run Program MakerBAT
+  
+  Print "Waiting for export to finish..."
+  StartTime = GetTickCount()
+  Do While FileExists(MakerBAT)
+    If (EndTime - StartTime) > 20000 Then
+      Print "Hmmm that's taking quite a long time. If you don't think it should be taking this long please delete the following file to force MapInfo out of its infinite loop: " & MakerBAT
+    End If
+    
+    EndTime = GetTickCount()
+    Print "Still waiting..."
+    Call Sleep(2000)
+  Loop
+  
+  Print "File exported successfully!"
+  
+  Drop Table ExportTab
+  
+  If IsTableOpen(tmptab) Then
+    Drop Table tmptab
+  End If
+  
+  Exit Sub
+  
+OGRError:
+  Print "OGR Error. Attempting to continue... [" & Error$() & "]"
+End Sub                                                             'Blockend
+
+Sub ExportIMUT                                                      'Blockstart
+  Note "This doesn't work yet."
+End Sub                                                             'Blockend

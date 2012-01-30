@@ -5,6 +5,7 @@
 *.dat
 *.tda
 *.tin
+*.bat
 /screenshots/*
 /compiled/*
 /backup/*

@@ -9,23 +9,28 @@
 Include "mapbasic.def"
 Include "globals.def"
 
+Declare Sub CheckFolder
+
+Dim Success       As Logical
+
 Sub MifDxfShpExporter                                               'Blockstart
   OnError goto whats_wrong
 
   If NumTables() < 1 Then Exit Sub End If
   
-  Dim TabFile      As String              ' TAB file to be exported by Dxf Mif Shp Exporter   e.g. "c:\temp\SiteForm.tab
-  Dim TableName    As String              ' name of Tab file     e.g. "SiteForm"
-  Dim RunStr       As String              ' command string to be input into batch files
-  Dim ControlMaker As String              ' url of BAT file for creating ControlFile
-  Dim ControlFile  As String              ' url of Control File for exporter
-  Dim SHPMaker     As String              ' url of BAT file for creating SHP
-  Dim dirStatus    As Integer             ' status of directory being created - non-zero if folder is created
-  Dim tSecurity    As SECURITY_ATTRIBUTES ' for creating a new directory
-  Dim ExportFolder As String
-  Dim TableNum     As Integer
-  Dim TableNums(1) As String
+  Dim TabFile       As String              ' TAB file to be exported by Dxf Mif Shp Exporter   e.g. "c:\temp\SiteForm.tab
+  Dim TableName     As String              ' name of Tab file     e.g. "SiteForm"
+  Dim RunStr        As String              ' command string to be input into batch files
+  Dim SHPMaker      As String              ' url of BAT file for creating SHP
+  Dim dirStatus     As Integer             ' status of directory being created - non-zero if folder is created
+  Dim tSecurity     As SECURITY_ATTRIBUTES ' for creating a new directory
+  Dim TableNum      As Integer
+  Dim TableNums(1)  As String
+  Dim FileType      As String
+  Dim ExportFile    As String
 
+  'Dim TableFileName As String
+  
   Call GetTablelist(TableNums)
 
   ExportFolder = ""
@@ -51,76 +56,84 @@ Sub MifDxfShpExporter                                               'Blockstart
 
 
   If CommandInfo(CMD_INFO_DLG_OK) Then
+    Print "ExportFolder: " & ExportFolder
   
-    If ExportFolder = "" Then Exit Sub End If
+    ' Check we know where IMUT.exe is
+    ' If IMUTURI = "" Then
+      ' Note "IMUT.exe has not been located. Please locate it now and try again."
+      ' Call SettingsDialog
+      ' Exit Sub
+    ' End If
 
-    TableName = TableInfo(TableNum, TAB_INFO_NAME)
-
-    tSecurity.nLength = 24
-    DirStatus = CreateDirectory32(ExportFolder + "\Converted", tSecurity)
-    DirStatus = CreateDirectory32(ExportFolder + "\Converted\MIF", tSecurity)
-    DirStatus = CreateDirectory32(ExportFolder + "\Converted\DXF", tSecurity)
-    DirStatus = CreateDirectory32(ExportFolder + "\Converted\SHP", tSecurity)
-    ExportFolder = ExportFolder + "\Converted\"
-
-    Print "Exporting..."
-
-    Export TableName
-      Into ExportFolder + "MIF\" + TableName + ".mif"
-      Type "MIF"
-      Overwrite
-    Print "MIF exported."
-
-    Export TableName
-      Into ExportFolder + "DXF\" + TableName + ".dxf"
-      Type "DXF"
-      Overwrite
-    Print "DXF Exported"
-
-    ControlFile  = ExportFolder + "ControlFile.fme"
-    ControlMaker = ExportFolder + "ControlMaker.bat"
-
-    If Not FileExists(ControlFile) Then   'If control file doesn't exist then make a new one
-      RunStr = "C:\Progra~1\MapInfo\Professional\UT\IMUT.exe CFGenerate MAPINFO SHAPE """ + TabFile + """ """ + ControlFile + """ LOG_STANDARDOUT ""YES"""
-      Open File ControlMaker
-        For Output
-        Access Write
-        As #1
-      Print #1, RunStr
-      Close File #1
-      Run Program ControlMaker
-      Print "Waiting for FME file to be made..."
-      While Not FileExists(ControlFile) ' wait until fme file is made before carrying on...
-        Call Sleep(2000)                'pause for 2secs, otherwise it'll spaz out trying to repeatedly check for the file...
-      Wend
+    If OGR2OGRURI = "" Then
+      Note "OGR2OGR has not been located. Please locate it now and try again."
+      Call SettingsDialog
+      Exit Sub
+    End If
+  
+    ' Check we got an output folder
+    If ExportFolder = "" Then
+      Note "You didn't pick a destination folder."
+      Exit Sub
     End If
 
-    RunStr = "C:\Progra~1\MapInfo\Professional\UT\IMUT.exe """ + ControlFile + """ --HOMOGENOUS_GEOMETRY ""YES"" --_SHAPE_FILE_TYPE ""2d"" --SourceDataset """ + TabFile + """ --DestDataset """ + ExportFolder + """ --_EXTENSION ""TAB"" --_BASENAME Converted\SHP --_FULLBASENAME """"Converted\SHP"
-    SHPMaker = ExportFolder + "SHPMaker.bat"
-    Open File SHPMaker
-      For Output
-      Access Write
-      As #2
-    Print #2, RunStr
-    Close File #2
-    While Not FileExists(ShpMaker) ' wait until file created - see above
-      Call Sleep(2000)
-    Wend
-    Run Program SHPMaker
-    Print "SHP Exported."
-    Print "All done (hopefully) :D" & Chr$(10) & "Note: You can delete the .bat and .fme files from the 'Converted' folder."
-    Note "All done (hopefully) :D" & Chr$(10) & "Note: You can delete the .bat and .fme files from the 'Converted' folder."
+    TableName = TableInfo(TableNum, TAB_INFO_NAME)
+    
+    ' Create sub sub-directories
+    tSecurity.nLength = 24
+    'DirStatus = CreateDirectory32(ExportFolder & "\Converted", tSecurity)
+    DirStatus = CreateDirectory32(ExportFolder & "\MIF", tSecurity)
+    DirStatus = CreateDirectory32(ExportFolder & "\DXF", tSecurity)
+    DirStatus = CreateDirectory32(ExportFolder & "\SHP", tSecurity)
+    'ExportFolder = ExportFolder & "\Converted\"
+
+    ' OGR2OGR doesn't support MIF
+    ' Print "Exporting " & TableName & " as MIF..." 
+    ' FileType = "MIF"
+    ' ExportFile = ExportFolder & "\" & TableName & ".mif"
+    ' Export TableName
+      ' Into ExportFile
+      ' Type "MIF"
+      ' Overwrite
+    ' Print "Done!"
+    
+    FileType = "MapInfo File"
+    ExportFile = ExportFolder & "\MIF\" & TableName & ".mif"
+    Call ExportOGR(TableName, FileType, ExportFile)
+
+    ' Not using this as OGR doesn't support DXF data attributes. Nor does it 
+    ' support Multipoints or non-object records. Using 'Export' command instead.
+    'FileType = "DXF"
+    'ExportFile = ExportFolder & "\" & TableName & ".dxf"
+    'Call ExportOGR(TableName, FileType, ExportFile)
+
+    Print "Exporting DXF..."
+    
+    SELECT Obj FROM TableName WHERE Obj INTO DELETEME
+    SELECT Obj FROM DELETEME WHERE IsObjectDXFSafe(Obj) Into ExporterTab
+    Close Table DELETEME
+    
+    DirStatus = CreateDirectory32(ExportFolder & "\DXF", tSecurity)
+    
+    Export ExporterTab
+      Into ExportFolder & "\DXF\" & TableName & ".dxf"
+      Type "DXF"
+      Overwrite
+    Close Table ExporterTab
+    Print "Done!"
+    
+    FileType = "ESRI Shapefile"
+    ExportFile = ExportFolder & "\SHP\" & TableName & ".shp"
+    Call ExportOGR(TableName, FileType, ExportFile)
+
+    Note "All done! :D"
   End If
 
   Exit Sub
 
 whats_wrong:
-  Note "Whoops. MifDxfShp Exporter Error: " & Error$() & Chr$(13) & 
+  Note "Whoops. MifDxfShp exporter error: " & Error$() & Chr$(13) & 
        "Export process has been aborted. " & Chr$(13) & 
        "It wasn't supposed to do that." & Chr$(13) & 
        "Please report this error so that it can be fixed."
-
 End Sub                                                             'Blockend
-
-
-

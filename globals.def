@@ -4,13 +4,24 @@
 '* Source available at github.com/mrchimp/JakesMapbasicToolbars *
 '****************************************************************
 
-Define TOOLBAR_VERSION 6.9
+Define TOOLBAR_VERSION 6.10
 
-Global SitePlanExportFolder As String     ' Destination for exported site plans.
+Global ExportFolder As String     ' Destination for exported site plans.
 
 ' These arrays are populated in JakesToolbar.mb
 Global AreaUnitsArray(16) as String
-Global FileTypeArray(13) as String
+Global DistUnits(13)      as String
+Global DistUnitNames(13)  as String
+Global FileTypeArray(13)  as String
+Global OGRFormats(18)     as String
+
+' Settings.mb
+Declare Sub SettingsDialog
+Declare Sub LocateOGR2OGR
+Declare Sub LocateIMUT
+Declare Sub CheckSettings
+Declare Sub SaveSettings
+Declare Sub LoadSettings
 
 ' helper_functions.mb
 Declare Sub ColumnList(strTableName as string, strColumnList() as string)
@@ -26,8 +37,35 @@ Declare Function ChooseWindowNum As String
 Declare Function IsTableOpen(Byval TName as string) as logical
 Declare Function ChooseTable As String
 Declare Function IsObjectRegion(ByVal ObjAlias As Object) As Logical
+Declare Function IsObjectDXFSafe(ByVal ObjAlias As Object) As Logical
 Declare Function ReplaceCharAtPosition(ByVal StrValue As String, ByVal Position As Integer, ByVal ReplaceWith As String) As String
-Declare Function WindowTypeNumToString (TypeNum as Integer) As String
+Declare Function WindowTypeNumToString(TypeNum as Integer) As String
+Declare Sub ExportOGR(TblName as String, FileType as String, TargetDir as String)
+Declare Sub ExportIMUT
+Declare Function BrowseForFolder(hWndOwner As Integer, sPrompt As String) As String
+'Blockstart ' BrowseForFolder Stuff --------------------------------------------
+' THE FOLLOWING ARE ALL NEEDED FOR THE BrowseForFolder FUNCTION TO WORK
+Define BIF_RETURNONLYFSDIRS &H1
+Define MAX_PATH 260
+Define CSIDL_DRIVES &H11
+Type BrowseInfo
+  hWndOwner      As Integer
+  pIDLRoot       As Integer
+  pszDisplayName As String
+  lpszTitle      As String
+  ulFlags        As Integer
+  lpfnCallback   As Integer
+  lParam         As Integer
+  iImage         As Integer
+End Type
+Dim hWndOwner As Integer
+Dim sPrompt As String
+Declare Sub CoTaskMemFree Lib "ole32.dll" (ByVal hMem As Integer)
+Declare Function lstrcat Lib "kernel32" Alias "lstrcatA" (ByVal lpString1 As String, ByVal lpString2 As String) As Integer
+Declare Function SHBrowseForFolder Lib "shell32" Alias "SHBrowseForFolderA"(lpbi As BrowseInfo) As Integer
+Declare Function SHGetPathFromIDList Lib "shell32" Alias "SHGetPathFromIDListA" (ByVal pidList As Integer, lpBuffer As String) As Integer
+Declare Function SHGetSpecialFolderLocation Lib "shell32.dll" (ByVal hwndOwner As Integer, ByVal nFolder As Integer, ppidl As Integer) As Integer
+'Blockend ' End BrowseForFolder Stuff ==========================================
 
 ' SitePlanExplorer.mb
 Declare Sub SitePlanExporter 
@@ -47,6 +85,9 @@ Declare Sub FindOverlaps
 
 ' MixDxfShpExporter.mb
 Declare Sub MifDxfShpExporter
+
+' MultiExport
+Declare Sub MultiExport
 
 ' WindowTools.mb
 Declare Sub NewA4LayoutP
@@ -99,3 +140,7 @@ Declare function CreateDirectory32 lib "Kernel32.dll" alias "CreateDirectoryA"  
 
 ' pauses execution for a given times  
 Declare Sub Sleep Lib "kernel32" Alias "Sleep" (ByVal dwMilliseconds As Integer)
+
+Global OGR2OGRURI  as String
+Global IMUTURI     as String
+Global SettingsURI as String

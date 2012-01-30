@@ -1,0 +1,126 @@
+'****************************************************************
+'* Jake's Amazing Toolbar - Settings Module                     *
+'* 2009-2011 All Rights Reserved                                *
+'* Source available at github.com/mrchimp/JakesMapbasicToolbars *
+'****************************************************************
+
+Include "mapbasic.def"
+Include "globals.def"
+
+' View and alter settings
+Sub SettingsDialog                                                  'Blockstart
+  Dialog
+    Title "Jake's Tools Settings"
+  
+  Control StaticText
+    Title    "OGR2OGR.exe"
+    Position 10, 10
+  Control EditText
+    Into  OGR2OGRURI
+    Value OGR2OGRURI
+    ID    1
+    'Disable
+    Position 10, 20
+    Width 200
+  Control Button
+    Title   "Browse"
+    Calling LocateOGR2OGR
+    ID      2
+    Position 215, 19
+  
+  Control StaticText
+    Title "IMUT.exe"
+    Position 10, 50
+  Control EditText
+    Into  IMUTURI
+    Value IMUTURI
+    ID    3
+    'Disable
+    Position 10, 60
+    Width 200
+  Control Button
+    Title   "Browse"
+    Calling LocateIMUT
+    ID      4
+    Position 215, 59
+    
+  Control CancelButton
+    Position 10, 80
+  Control OKButton
+    Position 50, 80
+    
+  If CommandInfo(CMD_INFO_DLG_OK) Then
+    Call SaveSettings
+  End If
+End Sub                                                             'Blockend
+
+' Find OGR2OGR.exe
+Sub LocateOGR2OGR                                                   'Blockstart
+  Dim OGR as String
+  OGR = FileOpenDlg("", "OGR2OGR.exe", "EXE", "Locate OGR2OGR.exe")
+  If OGR <> "" Then
+    Alter Control 1 Value OGR
+  End If
+End Sub                                                             'Blockend
+
+' Find IMUT
+Sub LocateIMUT                                                      'Blockstart
+  Dim IMUT as String
+  IMUT = FileOpenDlg("", "IMUT.exe", "EXE", "Locate IMUT.exe")
+  If IMUT <> "" Then
+    Alter Control 3 Value IMUT
+  End If
+End Sub                                                             'Blockend
+
+' Load settings from the settings file
+Sub LoadSettings                                                    'Blockstart
+  OnError Goto LoadSettingsFail
+
+  OGR2OGRURI = ""
+  IMUTURI    = ""
+  
+  Open File SettingsURI For Input as #1
+  Input #1, OGR2OGRURI
+  Input #1, IMUTURI
+  Close File #1
+  Exit Sub
+  
+LoadSettingsFail:
+  Note "Files have not been located. Some functions will not function. #1" & Error$()
+End Sub                                                             'Blockend
+
+' Create a new settings file and locate files that are defined in it
+Sub SaveSettings                                                    'Blockstart
+  OnError Goto CreateSettingsFail
+  
+  Open File SettingsURI For Output As #1
+  Print #1, OGR2OGRURI
+  Print #1, IMUTURI
+  Close File #1
+  
+  Exit Sub
+
+CreateSettingsFail:
+  OGR2OGRURI = ""
+  IMUTURI    = ""
+End Sub                                                             'Blockend
+
+' Load settings from file if it exists, else locate exes
+Sub CheckSettings                                                   'Blockstart
+  OnError Goto NoSettings
+  
+  If FileExists(SettingsURI) Then
+    Call LoadSettings
+  Else
+    Note "You have yet to set up the locations of OGR2OGR and IMUT. " & Chr$(10) & 
+          "The settings window will now open to let you do this. " & Chr$(10) & 
+          "You should only have to do this once."
+    Call SettingsDialog
+  End If
+
+  Exit Sub
+NoSettings:
+  Note "Files have not been located. Some functions will not function. #3" & Error$()
+  OGR2OGRURI = ""
+  IMUTURI    = ""
+End Sub                                                               'Blockend

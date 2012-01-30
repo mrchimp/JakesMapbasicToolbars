@@ -67,6 +67,7 @@ Sub Main                                                            'Blockstart
   DistUnitNames(12) = "Chains"
   DistUnitNames(13) = "Inches"
   
+  ' Image types available to the Save Window command.
   FileTypeArray(1)  = "PNG"
   FileTypeArray(2)  = "BMP"
   FileTypeArray(3)  = "WMF"
@@ -81,21 +82,26 @@ Sub Main                                                            'Blockstart
   FileTypeArray(12) = "EMF"
   FileTypeArray(13) = "GEOTIFF"
 
-  OGRFormats(1)  = "BNA"
-  OGRFormats(2)  = "CSV"
-  OGRFormats(3)  = "DGN"
-  OGRFormats(4)  = "DXF"
-  OGRFormats(5)  = "ESRI Shapefile"
-  OGRFormats(6)  = "GeoJSON"
-  OGRFormats(7)  = "Geoconcept"
-  OGRFormats(8)  = "GeoRSS"
-  OGRFormats(9)  = "GML"
-  OGRFormats(10) = "GMT"
-  OGRFormats(11) = "GPX"
-  OGRFormats(12) = "GPSTrackMaker"
-  OGRFormats(13) = "KML"
-  OGRFormats(14) = "Mapinfo File"
-  OGRFormats(15) = "Memory"
+  ' Formats used by MultiExport
+  ' NOTE: The OGR part is now a misnomer.
+  OGRFormats(1)  = "ASCII"
+  OGRFormats(2)  = "BNA"
+  OGRFormats(3)  = "CSV"
+  OGRFormats(4)  = "DBF"
+  OGRFormats(5)  = "DGN"
+  OGRFormats(6)  = "DXF"
+  OGRFormats(7)  = "ESRI Shapefile"
+  OGRFormats(8)  = "GeoJSON"
+  OGRFormats(9)  = "Geoconcept"
+  OGRFormats(10)  = "GeoRSS"
+  OGRFormats(11) = "GML"
+  OGRFormats(12) = "GMT"
+  OGRFormats(13) = "GPX"
+  OGRFormats(14) = "GPSTrackMaker"
+  OGRFormats(15) = "KML"
+  OGRFormats(16) = "Mapinfo File"
+  OGRFormats(17) = "Memory"
+  OGRFormats(18) = "MIF"
   
   ' Make some default styles
   PenStyle   = MakePen(6,2,RED)
@@ -136,7 +142,10 @@ Sub Main                                                            'Blockstart
       Calling SitePlanExporter,
     "&MIF DXF and SHP..."
       HelpMsg "Export a MIF, DXF and SHP version of a given table."
-      Calling MifDxfShpExporter
+      Calling MifDxfShpExporter,
+    "&Batch Table Exporter (beta)..."
+      HelpMsg "Exports multiple files to multiple formats."
+      Calling MultiExport
 
   Create Menu "ViewTool" As
     "&Save View"
@@ -158,9 +167,18 @@ Sub Main                                                            'Blockstart
       HelpMsg "View the coordinate system descriptor of the selected window."
       Calling GetWindowCoordSys
   
+  Create Menu "&Overlaps" As
+    "&Single Table..."
+      HelpMsg "Show which records overlap other records from the same table."
+      Calling OverlapDetector,
+    "&Single Table -> Multiple Tables..."
+      HelpMsg "Find overlaps between one table and multiple other tables."
+      Calling CheckConstraints
+  
   Create Menu "&Jake's Tools" As
     "&Coordsys" as "&CoordsysTools",
     "&Export"   as "Export",
+    "&Overlaps" as "Overlaps",
     "&Views"    as "ViewTool",
     "&Window"   as "WindowTools",
     "(-",
@@ -170,12 +188,6 @@ Sub Main                                                            'Blockstart
     "&Area Update..."
       HelpMsg "Update the area column of a table byt calculating the areas of the attached objects."
       Calling SiteAreaUpdate,
-    "Co&nstraints Overlaps..."
-      HelpMsg "Find overlaps between one table and multiple other tables."
-      Calling CheckConstraints,
-    "&Overlaps..."
-      HelpMsg "Show which records overlap other records from the same table."
-      Calling OverlapDetector,
     "(-",
     "Settings"
       HelpMsg "View and change settings."

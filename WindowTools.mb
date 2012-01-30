@@ -240,7 +240,7 @@ Sub GetWindowInfo                                                   'Blockstart
   Print "Top-most: " & WindowInfo(WindowNum, WIN_INFO_TOPMOST)
   Print "Windows HWND: " & WindowInfo(WindowNum, WIN_INFO_WND)
   Print "SnapMode: " & WindowInfo(WindowNum, WIN_INFO_SNAPMODE)
-  Print "SnapThreshold: " & WindowInfo(WindowNum, WIN_INFO_SNAPTHRESHOLD)
+  Print "SnapThreshold: " & Str$(WindowInfo(WindowNum, WIN_INFO_SNAPTHRESHOLD))
   
   ' Print Chr$(10) & "== Printer =="
   ' Print "PrinterName: " & WindowInfo(WindowNum, WIN_INFO_PRINTER_NAME)
