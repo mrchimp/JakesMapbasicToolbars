@@ -9,6 +9,7 @@ Requirements
 
 These programs have been written in MapBasic 10.5. They *may* work on some older versions but I have no way of testing this. They definitely *don't* compile on v6.5 or earlier. Please let me know if you have tried/succeeded/failed to compile them on an earlier version.
 
+Update 2012-03-15: After minor bug fixing compiling on 8.5 should now work.
 
 Features
 ========
