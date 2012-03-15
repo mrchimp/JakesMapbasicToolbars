@@ -23,16 +23,9 @@ Sub GetTableCoordSys                                                'Blockstart
   ' Find the projection
   TheProjection = TableInfo(TableName, TAB_INFO_COORDSYS_CLAUSE)
   
-  Note "The coordinate system for " + TableName + " is:" &
-        CoordSysName$(TheProjection) & Chr$(10) & Chr$(10) & 
-        "See the print window for more information."
+  Note "The coordinate system for " + TableName + " is:" & CoordSysName$(TheProjection) & Chr$(10) & Chr$(10) & "See the print window for more information."
 
-  Print "The coordinate system for " + TableName + " is:" &
-        CoordSysName$(TheProjection) & Chr$(10) & Chr$(10) & 
-        "Full MapInfo coord string: " & Chr$(10) & TheProjection & Chr$(10) & Chr$(10) & 
-        "EPSG: " & CoordSysStringToEPSG(TheProjection) & Chr$(10) & 
-        "PRJ: " & CoordSysStringToPRJ$(TheProjection) & Chr$(10) & 
-        "WKT: " & CoordSysStringToWKT$(TheProjection) & Chr$(10)
+  Print "The coordinate system for " + TableName + " is:" & CoordSysName$(TheProjection) & Chr$(10) & Chr$(10) & "Full MapInfo coord string: " & Chr$(10) & TheProjection & Chr$(10) & Chr$(10) & "EPSG: " & CoordSysStringToEPSG(TheProjection) & Chr$(10) & "PRJ: " & CoordSysStringToPRJ$(TheProjection) & Chr$(10) & "WKT: " & CoordSysStringToWKT$(TheProjection) & Chr$(10)
         
 End Sub                                                             'Blockend
 
@@ -53,16 +46,9 @@ Sub GetWindowCoordSys                                               'Blockstart
 
   If WindowType = WIN_MAPPER Then
     TheProjection = MapperInfo(TheWindowID, MAPPER_INFO_COORDSYS_CLAUSE)
-    Note "The projection is:" +
-          Chr$(10) + CoordSysName$(TheProjection) & Chr$(10) & Chr$(10) & 
-          "See the print window for more information."
+    Note "The projection is:" & Chr$(10) & CoordSysName$(TheProjection) & Chr$(10) & Chr$(10) & "See the print window for more information."
     
-    Print "The coordinate system is:" &
-        CoordSysName$(TheProjection) & Chr$(10) & Chr$(10) & 
-        "Full MapInfo coord string: " & Chr$(10) & TheProjection & Chr$(10) & Chr$(10) & 
-        "EPSG: " & CoordSysStringToEPSG(TheProjection) & Chr$(10) & 
-        "PRJ: "  & CoordSysStringToPRJ$(TheProjection) & Chr$(10) & 
-        "WKT: "  & CoordSysStringToWKT$(TheProjection) & Chr$(10)
+    Print "The coordinate system is:" & CoordSysName$(TheProjection) & Chr$(10) & Chr$(10) & "Full MapInfo coord string: " & Chr$(10) & TheProjection & Chr$(10) & Chr$(10) & "EPSG: " & CoordSysStringToEPSG(TheProjection) & Chr$(10) & "PRJ: "  & CoordSysStringToPRJ$(TheProjection) & Chr$(10) & "WKT: "  & CoordSysStringToWKT$(TheProjection) & Chr$(10)
         
   ElseIf WindowType = WIN_BROWSER Then
     Dim TableName as String 
@@ -70,16 +56,9 @@ Sub GetWindowCoordSys                                               'Blockstart
     TableName = WindowInfo(TheWindowId, WIN_INFO_TABLE)
     TheProjection = TableInfo(TableName, TAB_INFO_COORDSYS_CLAUSE)
     
-    Note "The projection is:" +
-          Chr$(10) + CoordSysName$(TheProjection) & Chr$(10) & Chr$(10) & 
-          "See the print window for more information."
+    Note "The projection is:" & Chr$(10) & CoordSysName$(TheProjection) & Chr$(10) & Chr$(10) & "See the print window for more information."
     
-    Print "The coordinate system is:" &
-        CoordSysName$(TheProjection) & Chr$(10) & Chr$(10) & 
-        "Full MapInfo coord string: " & Chr$(10) & TheProjection & Chr$(10) & Chr$(10) & 
-        "EPSG: " & CoordSysStringToEPSG(TheProjection) & Chr$(10) & 
-        "PRJ: "  & CoordSysStringToPRJ$(TheProjection) & Chr$(10) & 
-        "WKT: "  & CoordSysStringToWKT$(TheProjection) & Chr$(10)
+    Print "The coordinate system is:" & CoordSysName$(TheProjection) & Chr$(10) & Chr$(10) & "Full MapInfo coord string: " & Chr$(10) & TheProjection & Chr$(10) & Chr$(10) & "EPSG: " & CoordSysStringToEPSG(TheProjection) & Chr$(10) & "PRJ: "  & CoordSysStringToPRJ$(TheProjection) & Chr$(10) & "WKT: "  & CoordSysStringToWKT$(TheProjection) & Chr$(10)
   Else
     Note "Can't get the projection for that window."
   End If
