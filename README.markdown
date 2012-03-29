@@ -29,6 +29,8 @@ __Update areas__ - Update the area column of a table with the size of the attach
 
 __Export MIF DXF and SHP at once__
 
+__Export to GeoJSON/GeoJSONP__
+
 __Show unmapped records__
 
 __Save and Recall Mapper Location__ - Save a map window's location and zoom setting for quicker navigation. Similar to the NamedViews program that comes with MapInfo but saves views to a table to be used per-workspace rather than per-installation.
