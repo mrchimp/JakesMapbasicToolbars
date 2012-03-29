@@ -161,21 +161,6 @@ Function IsObjectDXFSafe(ByVal ObjAlias As Object) As Logical       'Blockstart
   End Case
 End Function                                                        'Blockend
 
-' Returns true if object is safe for convertion to BNA
-Function IsObjectBNASafe(ByVal ObjAlias As Object) As Logical       'Blockstart
-  Do Case ObjectInfo(ObjAlias, OBJ_INFO_TYPE)
-    Case OBJ_TYPE_MPOINT
-    Case OBJ_TYPE_ARC
-    Case OBJ_TYPE_PLINE
-    Case OBJ_TYPE_FRAME
-    Case OBJ_TYPE_TEXT
-    Case OBJ_TYPE_COLLECTION
-      IsObjectBNASafe = False
-    Case Else
-      IsObjectBNASafe = True
-  End Case
-End Function                                                        'Blockend
-
 ' Replaces slashes in a string with underscores
 ' Used by Site Plan Exporter for use in file names
 Function SlashesToUnderscores(ByVal StrValue As String) As String   'Blockstart
@@ -295,11 +280,9 @@ Sub ExportOGR(TblName as String, FileType as String, TargetFile as String) 'Bloc
 
   Dim TableFileName, RunStr, MakerBAT, ExportPath, TempTabURI As String
   Dim StartTime, EndTime as Integer
-  Dim ErrorLog as String
   
   ExportPath = PathToDirectory$(TargetFile)
   TempTabURI = PathToDirectory$(TempFileName$("")) & "tmptab.tab"
-  ErrorLog = ExportPath & "ErrorLog.txt"  
   
   If FileType = "DXF" Then
     SELECT * FROM TblName WHERE Obj INTO tmptab
@@ -310,17 +293,10 @@ Sub ExportOGR(TblName as String, FileType as String, TargetFile as String) 'Bloc
   
   Browse * From ExportTab
   
-  Print "TempTabURI: " & TempTabURI
-  
   Commit Table ExportTab As TempTabURI
- 
-  Print "Log File: " & ErrorLog
- 
-  RunStr   = "echo ""Exporting table " & TblName & "..."" && echo >> " & ErrorLog 
-           & "OGR2OGR -f """ & FileType & """ """ & TargetFile & """ """ & TempTabURI & """ -overwrite -skipfailures >> """ & ErrorLog & """" & Chr$(10) 
-           & "PAUSE" & Chr$(10) 
-           & "DEL ""%~f0"""
-  MakerBAT = GetFolderPath$(FOLDER_MI_APPDATA) & "DELETEME.bat"
+  
+  RunStr        = "OGR2OGR -f """ & FileType & """ """ & TargetFile & """ """ & TempTabURI & """ -overwrite -skipfailures" & Chr$(10) & "PAUSE" & Chr$(10) & "DEL ""%~f0"""
+  MakerBAT      = GetFolderPath$(FOLDER_MI_APPDATA) & "DELETEME.bat"
   
   Print "ExportPath: " & ExportPath
   'Print "TableFileName: " & TableFileName
@@ -368,51 +344,3 @@ End Sub                                                             'Blockend
 Sub ExportIMUT                                                      'Blockstart
   Note "This doesn't work yet."
 End Sub                                                             'Blockend
-
-
-' Convert Integer to Hexadecimal string
-' By Anssi Joutsiniemi - http://www.mail-archive.com/mapinfo-l@csn.net/msg09709.html
-Function Hex(ByVal iInput As Integer, ByVal iFormat As Integer) As String 'Blockstart
-  Dim x As Integer
-  Dim i, iDummy As SmallInt
-  Dim sGlyph, sOut As String
-
-  x = iInput
-  Do While 1
-    i = i + 1
-    iDummy = (x / 16^(i - 1)) Mod 16
-    Do Case iDummy
-      Case 10
-        sGlyph = "A"
-      Case 11
-        sGlyph = "B"
-      Case 12
-        sGlyph = "C"
-      Case 13
-        sGlyph = "D"
-      Case 14
-        sGlyph = "E"
-      Case 15
-        sGlyph = "F"
-      Case Else
-        sGlyph = Str$(iDummy)
-
-    End Case
-
-    sOut = sGlyph + sOut
-    If x < 16^i Then
-      Exit Do
-    End If
-  Loop
-
-  If iFormat Then
-    iDummy = iFormat - Len(sOut)
-    If iDummy > 0 Then
-      sOut = String$(iDummy,"0") & sOut
-    Else
-      sOut = Right$(sOut,iFormat)
-    End If
-  End If
-
-  Hex = sOut
-End Function                                                              'Blockend

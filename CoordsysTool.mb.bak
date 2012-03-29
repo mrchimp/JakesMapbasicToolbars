@@ -50,11 +50,17 @@ Sub GetWindowCoordSys                                               'Blockstart
   ElseIf WindowType = WIN_BROWSER Then
     'Dim TableName as String 
     
+<<<<<<< HEAD
     'TableName = WindowInfo(TheWindowId, WIN_INFO_TABLE)
     'TheProjection = TableInfo(TableName, TAB_INFO_COORDSYS_CLAUSE)
     TheProjection = TableInfo(WindowInfo(TheWindowId, WIN_INFO_TABLE), TAB_INFO_COORDSYS_CLAUSE)
     
     Call ShowCoordsys(TheProjection)
+=======
+    Note "The projection is:" & Chr$(10) & CoordSysName$(TheProjection) & Chr$(10) & Chr$(10) & "See the print window for more information."
+    
+    Print "The coordinate system is:" & CoordSysName$(TheProjection) & Chr$(10) & Chr$(10) & "Full MapInfo coord string: " & Chr$(10) & TheProjection & Chr$(10) & Chr$(10) & "EPSG: " & CoordSysStringToEPSG(TheProjection) & Chr$(10) & "PRJ: "  & CoordSysStringToPRJ$(TheProjection) & Chr$(10) & "WKT: "  & CoordSysStringToWKT$(TheProjection) & Chr$(10)
+>>>>>>> 484de6d56056ffec401578b262efea7156acab12
   Else
     Note "Can't get the projection for that window."
   End If
@@ -62,16 +68,4 @@ Sub GetWindowCoordSys                                               'Blockstart
   Exit Sub
 Borked:
   Note "Error: "+ Error$()
-End Sub                                                             'Blockend
-
-Sub ShowCoordsys(proj as string)                                    'Blockstart
-  Note  "The coordinate system is: " & CoordSysName$(proj) & Chr$(10) & Chr$(10) & 
-        "See the print window for more information."
-
-  Print "The coordinate system is:" &
-        CoordSysName$(proj) & Chr$(10) & Chr$(10) & 
-        "Full MapInfo coord string: " & Chr$(10) & proj & Chr$(10) & Chr$(10) & 
-        "EPSG: " & CoordSysStringToEPSG(proj) & Chr$(10) & 
-        "PRJ: "  & CoordSysStringToPRJ$(proj) & Chr$(10) & 
-        "WKT: "  & CoordSysStringToWKT$(proj) & Chr$(10)
 End Sub                                                             'Blockend

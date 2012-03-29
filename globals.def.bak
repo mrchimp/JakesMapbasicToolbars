@@ -4,7 +4,7 @@
 '* Source available at github.com/mrchimp/JakesMapbasicToolbars *
 '****************************************************************
 
-Define TOOLBAR_VERSION 6.11
+Define TOOLBAR_VERSION 6.10
 
 Global ExportFolder As String     ' Destination for exported site plans.
 
@@ -38,7 +38,6 @@ Declare Function IsTableOpen(Byval TName as string) as logical
 Declare Function ChooseTable As String
 Declare Function IsObjectRegion(ByVal ObjAlias As Object) As Logical
 Declare Function IsObjectDXFSafe(ByVal ObjAlias As Object) As Logical
-Declare Function IsObjectBNASafe(ByVal ObjAlias As Object) As Logical
 Declare Function ReplaceCharAtPosition(ByVal StrValue As String, ByVal Position As Integer, ByVal ReplaceWith As String) As String
 Declare Function WindowTypeNumToString(TypeNum as Integer) As String
 Declare Sub ExportOGR(TblName as String, FileType as String, TargetDir as String)
@@ -67,8 +66,6 @@ Declare Function SHBrowseForFolder Lib "shell32" Alias "SHBrowseForFolderA"(lpbi
 Declare Function SHGetPathFromIDList Lib "shell32" Alias "SHGetPathFromIDListA" (ByVal pidList As Integer, lpBuffer As String) As Integer
 Declare Function SHGetSpecialFolderLocation Lib "shell32.dll" (ByVal hwndOwner As Integer, ByVal nFolder As Integer, ppidl As Integer) As Integer
 'Blockend ' End BrowseForFolder Stuff ==========================================
-Declare Function Hex(ByVal iInput As Integer, ByVal iFormat As Integer) As String
-
 
 ' SitePlanExplorer.mb
 Declare Sub SitePlanExporter 
@@ -110,7 +107,6 @@ Declare Sub ShowViewTable
 ' ProjectionTool.mb
 Declare Sub GetTableCoordSys
 Declare Sub GetWindowCoordSys
-Declare Sub ShowCoordsys(proj as string)
 
 ' LineTool.mb
 Declare Sub LineTool
@@ -120,9 +116,6 @@ Declare Sub CircleTool
 
 ' Constraints.mb
 Declare Sub CheckConstraints
-
-'ExportGeoJSON.mb
-Declare Sub ExportGeoJSON
 
 ' Global styles - used in SitePlanExporter
 Global PenStyle   As Pen

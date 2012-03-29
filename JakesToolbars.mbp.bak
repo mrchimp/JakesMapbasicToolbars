@@ -15,4 +15,3 @@ Module=CoordsysTool.mbo
 Module=CircleTool.mbo
 Module=LineTool.mbo
 Module=Constraints.mbo
-Module=ExportGeoJSON.mbo

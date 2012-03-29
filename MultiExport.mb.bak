@@ -11,8 +11,8 @@ Declare Sub FillTargetField
 Declare Sub ME_Handler
 
 Dim TblChoice(0), FrmtChoice(0) as String
-Dim TargetURI     As String
-Dim OkToExport    As Logical
+Dim TargetURI     as String
+Dim OkToExport    as Logical
 Dim TableNums(1)  As String
 
 Sub MultiExport                                                     'Blockstart
@@ -32,7 +32,6 @@ Sub MultiExport                                                     'Blockstart
   Dim TableNum      As Integer
   Dim FileType      As String
   Dim ExportFile    As String
-  Dim ExportFolder  As String
   Dim TableChoice, FormatChoice As SmallInt
   'Dim TargetPath    As String
 
@@ -105,7 +104,7 @@ Sub MultiExport                                                     'Blockstart
     Else
       Print "oktoexport wasnt false: " & str$(OkToExport)
     End If
-    
+  
     print "TblChoice count: " & UBound(TblChoice)
     print "FrmtChoice count: " & UBound(FrmtChoice)
     print "TargetURI: " & TargetURI  
@@ -148,7 +147,6 @@ Sub MultiExport                                                     'Blockstart
             Overwrite
             Preserve AttributeData
             Preserve MultiPolygonRgns as Blocks
-          Drop Table JAExportTempTab1
           Drop Table JAExportTempTab2
           Print TableName & " exported as DXF."
         ElseIf FileType = "MIF" Then

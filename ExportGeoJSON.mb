@@ -1,0 +1,282 @@
+Include "mapbasic.def"
+Include "globals.def"
+
+Declare Sub ToggleFill
+
+Sub ExportGeoJSON                                                      'Blockstart
+  OnError Goto borked
+
+  If NumTables() = 0 Then
+    Note "No table to export."
+    Exit Sub
+  End If
+
+  Dim LineWeight,
+      StartingCRS,
+      TableNames(1), 
+      ColumnListVar(1), 
+      Percentages(101) as String
+      
+  Dim PenStyle as pen
+  Dim BrushStyle as Brush
+  Dim clickable, useFill, JSONP as Logical 
+  
+  Dim i,
+      TableNum, 
+      SiteRefNum,
+      LineColor, 
+      FillColor, 
+      LineColR, 
+      LineColG, 
+      LineColB, 
+      FillColR, 
+      FillColG, 
+      FillColB,
+      LineOpacity, 
+      FillOpacity as Integer
+  
+  ' Get CRS so we can reset it to this later on
+  StartingCRS = SessionInfo(SESSION_INFO_COORDSYS_CLAUSE)
+  
+  For i = 1 To 101
+    percentages(i) = Str$(i-1)
+  Next
+  
+  Call GetTableList(TableNames)
+  Call ColumnList(TableNames(1), ColumnListVar)
+  
+  PenStyle = MakePen(2, 02, RGB(255, 0, 0))
+  BrushStyle = MakeBrush(02, RGB(255,0,0), RGB(255,0,0))
+  
+  Dialog
+  Title "Export table for web mapping..."
+
+  Control StaticText
+    Title "Table Name: "
+    Position 4, 4
+  Control PopupMenu
+    Title From Variable TableNames
+    ID 51
+    Calling TableSelectHandler
+    Into TableNum
+    Position 4, 14
+    Width 170
+
+  Control StaticText
+    Title "Reference column: "
+    Position 4, 30
+  Control PopupMenu
+    Title From Variable ColumnListVar
+    Into SiteRefNum
+    ID 52
+    Position 4, 40
+    Width 170
+
+  Control Checkbox
+    Into JSONP
+    Value False
+    Position 70, 105
+  Control StaticText
+    Title "JSONP Extras?"
+    Position 86, 105
+    
+  ' Outline stlye
+  Control GroupBox
+    Title "Outline"
+    Position 4, 56
+    Height 40
+    Width 80
+    
+    Control PenPicker
+      Into PenStyle
+      Value PenStyle
+      Position 12, 70
+
+    Control Statictext
+      Title "Opacity"
+      Position 40, 65
+    Control PopupMenu
+      Title From Variable Percentages
+      Into LineOpacity
+      Value 101
+      Position 40, 77
+    
+  ' Fill style
+  Control GroupBox
+    Title "Fill"
+    Position 90, 56
+    Height 40
+    Width 90
+  
+    Control Checkbox
+      Into useFill
+      Value False
+      Position 96, 75
+      Calling ToggleFill
+      ID 60
+      
+    Control BrushPicker
+      Into BrushStyle
+      Value BrushStyle
+      Position 115, 70
+      ID 61
+      Disable
+      
+    Control StaticText
+      Title "Opacity"
+      Position 143, 65
+    Control PopupMenu
+      Title From variable Percentages
+      Into FillOpacity
+      Value 1
+      Position 143, 77
+      ID 62
+      Disable
+  
+  Control Checkbox
+    Into clickable
+    Value True
+    Position 4, 105
+  Control StaticText
+    Title "Clickable?"
+    Position 18, 105
+  
+  Control OKButton
+  Control CancelButton
+  
+  If CommandInfo(CMD_INFO_DLG_OK) Then
+    Dim TableName, TabFileName, GeoJSONFileName, GeoJSONPFileName, prependStr, appendStr as String
+    Dim SiteRefAlias as Alias
+    
+    TableName = TableNames(TableNum)
+    SiteRefAlias = ColumnListVar(SiteRefNum)
+  
+    ' Update coord and width columns
+    Update TableName Set xref = CentroidX(Obj)
+    Update TableName Set yref = CentroidY(Obj)
+    Update TableName Set zoomWidth = Distance(ObjectGeography(obj,OBJ_GEO_MINX),  ObjectGeography(obj,OBJ_GEO_MINY), ObjectGeography(obj,OBJ_GEO_MAXX), ObjectGeography(obj,OBJ_GEO_MINY), "m")    
+  
+    ' Create output table in temp folder
+    Create table TempTabToSave
+      ( 
+        SiteRef Char(50)
+      )
+      File TempFileName$("")
+      Type Native
+      
+    ' Make Table Mappable
+    Run Command ("Create Map For TempTabToSave " & EPSGToCoordSysString$("EPSG:4326"))
+  
+    ' populate table with objs and refs
+    SELECT SiteRefAlias FROM TableName WHERE Obj Into ToExport
+    INSERT INTO TempTabToSave ( SiteRef )
+      SELECT * FROM ToExport ' can't put there "where obj" here for some reason
+    
+    ' Update coord columns
+    Run command("Set " + EPSGToCoordSysString$("EPSG:4326"))
+    
+    ' Save the table as a TAB
+    TabFileName = FileSaveAsDlg("", "web_" & TableName & ".tab", "TAB", "Choose where to save GeoJSON file...")
+    If TabFileName = "" Then
+      Exit Sub
+    End If
+    
+    Commit Table TempTabToSave As TabFileName Interactive
+    
+    GeoJSONFileName = PathToDirectory$(TabFileName) & PathToTableName$(TabFileName) & ".geojson"
+    GeoJSONPFileName = GeoJSONFileName & "p"
+    
+    ' Convert file to GeoJSON
+    Dim cmd as String
+    cmd = """ogr2ogr.exe"" -f ""GeoJSON"" -t_srs WGS84 """ & GeoJSONFileName & """ """ & TabFileName & ""
+    Run Program cmd
+    
+    While Not FileExists(GeoJSONFileName)			' wait until fme file is made before carrying on...
+      print "Waiting for file to be created..."
+      Call Sleep(2000)						'pause for a little while, otherwise CPU usage goes to 100%
+    Wend
+    
+    ' Prepare some meta data
+    LineColor = StyleAttr(PenStyle, PEN_COLOR)
+    FillColor = StyleAttr(BrushStyle, BRUSH_FORECOLOR)
+    LineWeight = StyleAttr(PenStyle, PEN_WIDTH)
+    
+    ' From here: http://georezo.net/jparis/MI_Enviro/Colors/colors_and_mapinfo.htm
+    LineColR = int(LineColor / 65536)
+    LineColG = int((LineColor - LineColR * 65536) / 256)
+    LineColB = int(LineColor - LineColR * 65536 - LineColG*256)
+    
+    FillColR = int(FillColor / 65536)
+    FillColG = int((FillColor - FillColR * 65536) / 256)
+    FillColB = int(FillColor - FillColR * 65536 - FillColG*256)
+    
+   
+    
+    ' Output GeoJSONP if required
+    If JSONP = 1 Then
+      Dim tempStr as String
+      
+      Open File GeoJSONFileName For Input As #1
+      Open File GeoJSONPFileName For Output As #2
+      
+      Print #2, "handleGeoJSON("
+      
+      Do While Not EOF(1)
+        Line Input #1, tempStr
+        If Not EOF(1) Then
+          Print #2, tempStr 
+        End If
+      Loop
+      
+      Print #2, ", {"
+      Print #2, "color: '#" & hex(LineColR, 2) & hex(LineColG, 2) & hex(LineColB, 2) & "',"
+      Print #2, "weight: " & str$(LineWeight) & ","
+      Print #2, "opacity: " & str$((LineOpacity - 1)/100) & ","
+      
+      If useFill = 1 Then
+        Print #2, "fill: true,"
+      Else
+        Print #2, "fill: false,"
+      End If
+      
+      Print #2, "fillColor: '#" & hex(FillColR, 2) & hex(FillColG, 2) & hex(FillColB, 2) & "',"
+      Print #2, "fillOpacity: " & str$((FillOpacity - 1)/100) & ", "
+      
+      If clickable = 1 Then
+        Print #2,  "clickable: true"
+      Else
+        Print #2, "clickable: false"
+      End If
+      
+      Print #2, "})"
+      
+      Close File #1
+      Close File #2
+    End If
+    
+    ' Reset session CRS
+    Run Command ("Set " & StartingCRS)
+    Close Table TempTabToSave
+    Close Table ToExport
+  End If
+  
+  Exit Sub
+Borked:
+  Note "Error: " & Error$()
+  Close Table TempTabToSave
+  Close Table ToExport
+End Sub                                                             'Blockend
+
+Sub ToggleFill                                                            'Blockstart
+  Dim useFill as logical
+  
+  useFill = ReadControlValue(60)
+  
+  If useFill = 1 Then
+    Alter Control 61 Enable
+    Alter Control 62 Enable
+  Else
+    Alter Control 61 Disable
+    Alter Control 62 Disable
+  End If
+End Sub                                                                   'Blockend

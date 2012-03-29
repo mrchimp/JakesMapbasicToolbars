@@ -140,14 +140,11 @@ Sub Main                                                            'Blockstart
     "&Site Plans..."
       HelpMsg "Exports one image per record for a given layer."
       Calling SitePlanExporter,
-    "Table as &GeoJSON (beta)"
-      HelpMsg "Exports an open table as GeoJSON. (beta)"
-      Calling ExportGeoJSON,
-    "Table as &MIF DXF and SHP..."
+    "&MIF DXF and SHP..."
       HelpMsg "Export a MIF, DXF and SHP version of a given table."
       Calling MifDxfShpExporter,
     "&Batch Table Exporter (beta)..."
-      HelpMsg "Exports multiple files to multiple formats. (beta)"
+      HelpMsg "Exports multiple files to multiple formats."
       Calling MultiExport
 
   Create Menu "ViewTool" As
@@ -227,7 +224,9 @@ MainError:
 End Sub                                                             'Blockend
 
 Sub GTFO                                                            'Blockstart
-  If Ask("Are you sure?", "&Yes", "&No") Then
+  Dim ImDoneHere as Logical
+  ImDoneHere = Ask("Are you sure?", "&Yes", "&No")
+  If ImDoneHere Then
     End Program
   End If
 End Sub                                                             'Blockend
