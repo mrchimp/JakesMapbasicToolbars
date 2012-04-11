@@ -16,3 +16,5 @@ Module=CircleTool.mbo
 Module=LineTool.mbo
 Module=Constraints.mbo
 Module=ExportGeoJSON.mbo
+Module=DeleteObject.mbo
+Module=CopyObjects.mbo

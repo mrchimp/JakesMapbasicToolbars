@@ -265,19 +265,21 @@ Function WindowTypeNumToString (TypeNum as Integer) As String       'Blockstart
   End Case
 End Function                                                        'Blockend
 
-Sub GetEditableTable(TableName as String)                           'Blockstart
-  Dim i as integer
-  Dim j as integer
-  Dim TableList(1) as String
+Function GetEditableTable as String                                 'Blockstart
+  Dim i, j, WinID as integer
+  Dim TableList() as String
   i = NumTables()
   ReDim TableList(i)
+  
+  WinID = FrontWindow()
   For j = 1 to i
-    If TableInfo(j, LAYER_INFO_EDITABLE) Then
-      TableName = TableInfo(j, TAB_INFO_NAME)
-      Exit Sub
+    Note LayerInfo(WinID, j, LAYER_INFO_EDITABLE)
+    If LayerInfo(WinID, j, LAYER_INFO_EDITABLE) = TRUE Then
+      GetEditableTable = TableInfo(j, TAB_INFO_NAME)
+      'Exit Sub
     End If
   Next
-End Sub                                                             'Blockend
+End Function                                                        'Blockend
 
 ' Lets the user browse for a folder
 'Declare function CreateDirectory32 lib "Kernel32.dll" alias "CreateDirectoryA"  ' Used by the MIF DXF SHP exporter
@@ -416,3 +418,21 @@ Function Hex(ByVal iInput As Integer, ByVal iFormat As Integer) As String 'Block
 
   Hex = sOut
 End Function                                                              'Blockend
+
+' get name of currently editable layer
+' By Peter Horsboll Moller - gis.stackexchange.com/questions/22931
+Function GetEditLayerName(ByVal nMID As Integer) As String             'Blockstart
+  Dim nEditLayerID As Integer
+
+  GetEditLayerName = ""
+  nEditLayerID    = MapperInfo(nMID, MAPPER_INFO_EDIT_LAYER)
+  Do Case nEditLayerID
+    Case -1 '**No editable layer currently
+        
+    Case 0 '**The cosmetic layer is currently editable
+      GetEditLayerName = LayerInfo(nMID, nEditLayerID, LAYER_INFO_NAME)
+    Case Else
+      GetEditLayerName = LayerInfo(nMID, nEditLayerID, LAYER_INFO_NAME)
+  End Case
+End Function                                                              'Blockend
+

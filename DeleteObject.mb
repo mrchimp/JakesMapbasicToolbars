@@ -1,0 +1,33 @@
+'****************************************************************
+'* Jake's Amazing Toolbar - Circle Tool                         *
+'* 2009-2011 All Rights Reserved                                *
+'* Source available at github.com/mrchimp/JakesMapbasicToolbars *
+'****************************************************************
+
+Include "mapbasic.def"
+Include "globals.def"
+
+Sub DeleteObject                                                  'Blockstart
+  OnError Goto CannaeDelete
+  
+  Dim x, y As float
+  Dim EditableTableName as String 
+  
+  Note "This function is a work in progress. Expect surprises."
+  
+  EditableTableName = GetEditLayerName(FrontWindow())
+
+  x = CommandInfo(CMD_INFO_X)
+  y = CommandInfo(CMD_INFO_Y)
+
+  select * from EditableTableName where CreatePoint(x ,y) Within Obj into todelete
+  
+  'drop 
+  
+  Note "Table: " & EditableTableName
+     
+  Exit Sub
+	
+CannaeDelete:
+  Note "Error: "+ Error$()
+End Sub                                                           'Blockend

@@ -1,0 +1,141 @@
+'****************************************************************
+'* Jake's Amazing Toolbar - Copy Objects                        *
+'* 2009-2011 All Rights Reserved                                *
+'* Source available at github.com/mrchimp/JakesMapbasicToolbars *
+'****************************************************************
+
+Include "mapbasic.def"
+Include "globals.def"
+
+Declare Function myobj(ByVal siteId as string, ByVal sSourceRef as String) as object
+Declare Sub SourceTableHandler 
+Declare Sub DestTableHandler 
+Declare Sub OKICanHandleThat
+
+Dim iSource, iDest, iSourceRef, iDestRef as SmallInt
+Dim sSource, sDest, sSourceRef, sDestRef as String
+Dim aSourceRef, aDestRef as Alias
+Dim SourceColumnArray(1) as String
+Dim DestColumnArray(1) as String
+
+Sub CopyObjects                                                             'Blockstart
+  Dim TableArray(1) as String
+
+  Call GetTableList(TableArray)
+  Call ColumnList(TableArray(1), SourceColumnArray)
+  Call ColumnList(TableArray(1), DestColumnArray)
+  
+  Dialog
+    Title "Copy objects..."
+    
+    Control StaticText
+      Title "Copy objects from..."
+
+    ' Source
+    Control PopupMenu
+      Title From Variable TableArray
+      Calling SourceTableHandler
+      Id 51
+      Position 10, 20
+      Width 80
+    Control PopupMenu
+      Title From Variable SourceColumnArray
+      Id 52
+      Position 10, 50
+      Width 80
+    
+    Control StaticText
+      Title "where"
+      Position 10, 40
+    
+    Control StaticText
+      Title "="
+      Position 95, 50
+      
+    'Destination
+    Control StaticText
+      Title "to"
+      Position 95, 20
+    Control PopupMenu
+      Title From Variable TableArray
+      Calling DestTableHandler
+      Id 53
+      Position 105, 20
+      Width 80
+    Control PopupMenu
+      Title From Variable DestColumnArray
+      Id 54
+      Position 105, 50
+      Width 80
+      
+    Control CancelButton
+    Control OKButton
+      Calling OKICanHandleThat
+
+  If CommandInfo(CMD_INFO_DLG_OK) = False Then
+    Exit Sub
+  End If
+  
+  UPDATE sDest SET Obj = myobj(aDestRef, sSourceRef)
+End Sub                                                             'Blockend
+
+Sub OKICanHandleThat                                                'Blockstart
+  iSource = ReadControlValue(51)
+  iDest = ReadControlValue(53)
+  iSourceRef = ReadControlValue(52)
+  iDestRef  = ReadControlValue(54)
+  sSource = TableInfo(iSource, TAB_INFO_NAME)
+  sDest = TableInfo(iDest, TAB_INFO_NAME)
+  Print "SourceColumnArray size: " & UBound(SourceColumnArray)
+  Print "iSourceRef: " & iSourceRef
+  Print "DestColumnArray size: " & UBound(DestColumnArray)
+  Print "iDestRef: " & iDestRef
+  sSourceRef = SourceColumnArray(iSourceRef)
+  sDestRef = DestColumnArray(iDestRef)
+  
+  aDestRef = sDest & "." & sDestRef
+  
+  Print TableInfo(iDest, TAB_INFO_MAPPABLE)
+  Print TableInfo(iSource, TAB_INFO_MAPPABLE)
+  
+  ' Check tables are mappable
+  If TableInfo(iSource, TAB_INFO_MAPPABLE) <> 1 Then
+    Note "The source table (" & sSource & ") is not mappable."
+    Dialog Preserve
+  End If
+  
+  ' Check tables are mappable
+  If TableInfo(iDest, TAB_INFO_MAPPABLE) <> 1 Then
+    Note "The destination table (" & sDest & ") is not mappable."
+    Dialog Preserve
+  End If
+End Sub                                                             'Blockend
+
+Function myobj(ByVal siteId as string, ByVal sSourceRef as String) as object
+  Select * From sSource Where sSourceRef = siteId into tmp1 noselect
+  myobj = tmp1.Obj
+End Function
+
+
+' Updates the column list when the table dropdown is changed.
+Sub SourceTableHandler                                              'Blockstart
+  Dim ColumnListVar(10), strTable as string
+
+  strTable = TableInfo(readcontrolvalue(51), TAB_INFO_NAME)
+  Print strTable
+  Call ColumnList(strTable,ColumnListVar)
+
+  Alter Control 52 Title from Variable ColumnListVar
+End Sub                                                             'Blockend
+
+' Updates the column list when the table dropdown is changed.
+Sub DestTableHandler                                                'Blockstart
+  Dim ColumnListVar(10), strTable as string
+  
+  strTable = TableInfo(readcontrolvalue(53), TAB_INFO_NAME)
+  
+  Print strTable
+  Call ColumnList(strTable,ColumnListVar)
+
+  Alter Control 54 Title from Variable ColumnListVar
+End Sub                                                             'Blockend

@@ -185,6 +185,9 @@ Sub Main                                                            'Blockstart
     "&Views"    as "ViewTool",
     "&Window"   as "WindowTools",
     "(-",
+    "Copy &Objects..." 
+      HelpMsg "Copy objects from one table to another."
+      Calling CopyObjects,
     "&Unmapped Records..." 
       HelpMsg "Display all records froma given table which do not have an object attached."
       Calling ShowUnmapped,
@@ -218,6 +221,12 @@ Sub Main                                                            'Blockstart
       Cursor MI_CURSOR_CROSSHAIR
       DrawMode DM_CUSTOM_POINT
       Calling CircleTool
+    ToolButton
+      Icon MI_ICON_MISC_18
+      HelpMsg "Delete object without deleting record"
+      Cursor MI_CURSOR_CROSSHAIR
+      DrawMode DM_CUSTOM_POINT
+      Calling DeleteObject
     Show
   
   Exit Sub

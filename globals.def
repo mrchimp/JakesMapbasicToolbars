@@ -31,7 +31,7 @@ Declare Sub GetFolder
 Declare Sub GetWindowNumList (WindowList() as Integer)
 Declare Sub GetWindowList (WindowList() as String)
 Declare Sub TableSelectHandler
-Declare Sub GetEditableTable(TableName as String)
+Declare Function GetEditableTable as String
 Declare Function SlashesToUnderscores(ByVal StrValue As String) As String
 Declare Function ChooseWindowNum As String
 Declare Function IsTableOpen(Byval TName as string) as logical
@@ -68,7 +68,7 @@ Declare Function SHGetPathFromIDList Lib "shell32" Alias "SHGetPathFromIDListA" 
 Declare Function SHGetSpecialFolderLocation Lib "shell32.dll" (ByVal hwndOwner As Integer, ByVal nFolder As Integer, ppidl As Integer) As Integer
 'Blockend ' End BrowseForFolder Stuff ==========================================
 Declare Function Hex(ByVal iInput As Integer, ByVal iFormat As Integer) As String
-
+Declare Function GetEditLayerName(ByVal nMID As Integer) As String
 
 ' SitePlanExplorer.mb
 Declare Sub SitePlanExporter 
@@ -118,11 +118,17 @@ Declare Sub LineTool
 ' CircleTool.mb
 Declare Sub CircleTool
 
+' DeleteObject.mb
+Declare Sub DeleteObject
+
 ' Constraints.mb
 Declare Sub CheckConstraints
 
-'ExportGeoJSON.mb
+' ExportGeoJSON.mb
 Declare Sub ExportGeoJSON
+
+' CopyObjects.mb
+Declare Sub CopyObjects
 
 ' Global styles - used in SitePlanExporter
 Global PenStyle   As Pen
