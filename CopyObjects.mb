@@ -14,7 +14,7 @@ Declare Sub OKICanHandleThat
 
 Dim iSource, iDest, iSourceRef, iDestRef as SmallInt
 Dim sSource, sDest, sSourceRef, sDestRef as String
-Dim aSourceRef, aDestRef as Alias
+Dim aSourceRef, aDestRef, aSourceObj as Alias
 Dim SourceColumnArray(1) as String
 Dim DestColumnArray(1) as String
 
@@ -76,66 +76,78 @@ Sub CopyObjects                                                             'Blo
     Exit Sub
   End If
   
-  UPDATE sDest SET Obj = myobj(aDestRef, sSourceRef)
-End Sub                                                             'Blockend
+  aSourceObj = sSource & ".Obj"
+  
+  select * from sSource, sDest where aSourceObj and aSourceRef = aDestRef
+  UPDATE selection SET Obj = myobj(sDestRef, sSourceRef)
+  
+  Note "All done :D"
+End Sub                                                                      'Blockend
 
-Sub OKICanHandleThat                                                'Blockstart
+Function myobj(ByVal siteId as string, ByVal sSrcRef as String) as object    'Blockstart
+  Dim cmd as string
+  cmd = "SELECT * FROM " & sSource & " WHERE " & sSrcRef & " = """ & siteId & """ AND Obj INTO myobjtmp1 NOSELECT"
+  If IsTableOpen("myobjtmp1") Then
+    Exit Sub
+  End If
+  
+  run command cmd
+  Dim tmpobj as Object
+  tmpobj = myobjtmp1.Obj
+  Drop table myobjtmp1
+  myobj = tmpobj
+End Function                                                                 'Blockend
+
+Sub OKICanHandleThat                                                         'Blockstart
   iSource = ReadControlValue(51)
   iDest = ReadControlValue(53)
   iSourceRef = ReadControlValue(52)
   iDestRef  = ReadControlValue(54)
   sSource = TableInfo(iSource, TAB_INFO_NAME)
   sDest = TableInfo(iDest, TAB_INFO_NAME)
-  Print "SourceColumnArray size: " & UBound(SourceColumnArray)
-  Print "iSourceRef: " & iSourceRef
-  Print "DestColumnArray size: " & UBound(DestColumnArray)
-  Print "iDestRef: " & iDestRef
+  'Print "SourceColumnArray size: " & UBound(SourceColumnArray)
+  'Print "iSourceRef: " & iSourceRef
+  'Print "DestColumnArray size: " & UBound(DestColumnArray)
+  'Print "iDestRef: " & iDestRef
   sSourceRef = SourceColumnArray(iSourceRef)
   sDestRef = DestColumnArray(iDestRef)
-  
   aDestRef = sDest & "." & sDestRef
+  aSourceRef = sSource & "." & sSourceRef
   
-  Print TableInfo(iDest, TAB_INFO_MAPPABLE)
-  Print TableInfo(iSource, TAB_INFO_MAPPABLE)
-  
-  ' Check tables are mappable
-  If TableInfo(iSource, TAB_INFO_MAPPABLE) <> 1 Then
-    Note "The source table (" & sSource & ") is not mappable."
+  'Print TableInfo(iDest, TAB_INFO_MAPPABLE)
+  'Print TableInfo(iSource, TAB_INFO_MAPPABLE)
+
+  Dim proj as String
+
+  ' Check source is mappable
+  If TableInfo(iSource, TAB_INFO_MAPPABLE) = 0 Then
+    Note "The source table (" & sSource & ") is not mappable. Nothing to copy!"
     Dialog Preserve
   End If
   
   ' Check tables are mappable
-  If TableInfo(iDest, TAB_INFO_MAPPABLE) <> 1 Then
-    Note "The destination table (" & sDest & ") is not mappable."
-    Dialog Preserve
+  If TableInfo(iDest, TAB_INFO_MAPPABLE) = 0 Then
+    If Ask("The destination table (" & sDest & ") is not mappable. Make it mappable now?", "Ok", "Cancel") Then
+      Create Map For sDest Using sSource
+    Else
+      Dialog Preserve
+    End If
   End If
 End Sub                                                             'Blockend
-
-Function myobj(ByVal siteId as string, ByVal sSourceRef as String) as object
-  Select * From sSource Where sSourceRef = siteId into tmp1 noselect
-  myobj = tmp1.Obj
-End Function
 
 
 ' Updates the column list when the table dropdown is changed.
 Sub SourceTableHandler                                              'Blockstart
   Dim ColumnListVar(10), strTable as string
-
   strTable = TableInfo(readcontrolvalue(51), TAB_INFO_NAME)
-  Print strTable
   Call ColumnList(strTable,ColumnListVar)
-
   Alter Control 52 Title from Variable ColumnListVar
 End Sub                                                             'Blockend
 
 ' Updates the column list when the table dropdown is changed.
 Sub DestTableHandler                                                'Blockstart
   Dim ColumnListVar(10), strTable as string
-  
   strTable = TableInfo(readcontrolvalue(53), TAB_INFO_NAME)
-  
-  Print strTable
   Call ColumnList(strTable,ColumnListVar)
-
   Alter Control 54 Title from Variable ColumnListVar
 End Sub                                                             'Blockend

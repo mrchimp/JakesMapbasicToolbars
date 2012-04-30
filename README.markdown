@@ -1,15 +1,16 @@
 Jake's MapBasic Toolbar
 =======================
 
-A selection of useful tools for MapInfo written in mapBasic.
+A selection of useful tools for MapInfo written in MapBasic.
 
 
 Requirements
 ============
 
-These programs have been written in MapBasic 10.5. They *may* work on some older versions but I have no way of testing this. They definitely *don't* compile on v6.5 or earlier. Please let me know if you have tried/succeeded/failed to compile them on an earlier version.
+**OGR2OGR** - Some functions (namely GeoJSON export and multi-export) require [OGR2OGR](http://www.gdal.org/index.html) to be installed and for its location to be added to your PATH environment variable.
 
-Update 2012-03-15: Problems have also been found on 8.5 due to multi-line strings.
+**MapBasic Version** - These programs have been written in MapBasic 10.5. They *may* work on some older versions but I have no way of testing this. They definitely *don't* compile on v6.5 or earlier. Please let me know if you have tried/succeeded/failed to compile them on an earlier version. Update 2012-03-15: Problems have also been found on 8.5, possibly due to multi-line strings.
+
 
 Features
 ========

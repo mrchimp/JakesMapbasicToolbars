@@ -62,7 +62,7 @@ Sub Main                                                            'Blockstart
   DistUnitNames(7)  = "Rods"
   DistUnitNames(8)  = "Feet (international)"
   DistUnitNames(9)  = "US Survey Feet"
-  DistUnitNames(10) = "yards"
+  DistUnitNames(10) = "Yards"
   DistUnitNames(11) = "Links"
   DistUnitNames(12) = "Chains"
   DistUnitNames(13) = "Inches"
@@ -170,7 +170,7 @@ Sub Main                                                            'Blockstart
       HelpMsg "View the coordinate system descriptor of the selected window."
       Calling GetWindowCoordSys
   
-  Create Menu "&Overlaps" As
+  Create Menu "Find &Overlaps" As
     "&Single Table..."
       HelpMsg "Show which records overlap other records from the same table."
       Calling OverlapDetector,
@@ -188,10 +188,10 @@ Sub Main                                                            'Blockstart
     "Copy &Objects..." 
       HelpMsg "Copy objects from one table to another."
       Calling CopyObjects,
-    "&Unmapped Records..." 
+    "Show &Unmapped Records..." 
       HelpMsg "Display all records froma given table which do not have an object attached."
       Calling ShowUnmapped,
-    "&Area Update..."
+    "Update &Area Column..."
       HelpMsg "Update the area column of a table byt calculating the areas of the attached objects."
       Calling SiteAreaUpdate,
     "(-",
@@ -223,7 +223,7 @@ Sub Main                                                            'Blockstart
       Calling CircleTool
     ToolButton
       Icon MI_ICON_MISC_18
-      HelpMsg "Delete object without deleting record"
+      HelpMsg "Delete object without deleting record (Only works with region objects, not lines, points etc)."
       Cursor MI_CURSOR_CROSSHAIR
       DrawMode DM_CUSTOM_POINT
       Calling DeleteObject

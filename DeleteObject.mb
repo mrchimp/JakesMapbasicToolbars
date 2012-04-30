@@ -1,5 +1,5 @@
 '****************************************************************
-'* Jake's Amazing Toolbar - Circle Tool                         *
+'* Jake's Amazing Toolbar - Object deletion tool                *
 '* 2009-2011 All Rights Reserved                                *
 '* Source available at github.com/mrchimp/JakesMapbasicToolbars *
 '****************************************************************
@@ -13,19 +13,15 @@ Sub DeleteObject                                                  'Blockstart
   Dim x, y As float
   Dim EditableTableName as String 
   
-  Note "This function is a work in progress. Expect surprises."
-  
   EditableTableName = GetEditLayerName(FrontWindow())
 
   x = CommandInfo(CMD_INFO_X)
   y = CommandInfo(CMD_INFO_Y)
 
-  select * from EditableTableName where CreatePoint(x ,y) Within Obj into todelete
-  
-  'drop 
-  
-  Note "Table: " & EditableTableName
-     
+  select * from EditableTableName where CreatePoint(x ,y) Within Obj Into deletetheseobjects noselect
+  delete object from deletetheseobjects
+  drop table deletetheseobjects
+
   Exit Sub
 	
 CannaeDelete:
